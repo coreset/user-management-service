@@ -2,13 +2,19 @@ import { NestFactory } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AppLoggerService } from './common/logger/logger.service';
 import { DataSource } from 'typeorm';
+import { createSwaggerDocument } from './common/swagger/swagger';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
+
   // logger config ///////////////////////
   const logger = app.get(AppLoggerService);
   app.useLogger(logger);
   // end of login config \\\\\\\\\\\\\\\\
+
+  // swagger config ///////////////////////
+  createSwaggerDocument(app);
+  // end of swagger config \\\\\\\\\\\\\\\\
 
   // database connection check ///////////
   const dataSource = app.get(DataSource);
