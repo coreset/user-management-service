@@ -3,6 +3,7 @@ import { AppModule } from './app.module';
 import { AppLoggerService } from './common/logger/logger.service';
 import { DataSource } from 'typeorm';
 import { createSwaggerDocument } from './common/swagger/swagger';
+import { ValidationPipe } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -24,6 +25,10 @@ async function bootstrap() {
     logger.error('Failed to connect to the database', 'Bootstrap');
   }
   // end of database connection check \\\\
+
+  // Enable Global Validation ////////////
+  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  // end \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
 
   await app.listen(process.env.PORT ?? 3000);
 }
