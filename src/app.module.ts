@@ -5,6 +5,9 @@ import { ConfigModule, ConfigService } from '@nestjs/config'; // To load the env
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { DataSource } from 'typeorm';
 import { LoggerModule } from './common/logger/logger.module';
+import { UsersModule } from './modules/users/users.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { RolesModule } from './modules/roles/roles.module';
 
 @Module({
   imports: [
@@ -56,6 +59,9 @@ import { LoggerModule } from './common/logger/logger.module';
       inject: [ConfigService],
     }),
     LoggerModule,
+    UsersModule,
+    AuthModule,
+    RolesModule,
   ],
   controllers: [AppController],
   providers: [AppService],
