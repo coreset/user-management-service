@@ -4,10 +4,12 @@ import {
   Column,
   CreateDateColumn,
   OneToMany,
+  BeforeInsert,
 } from 'typeorm';
 import { AuthorizationCode } from '../../auth/entities/authorization-code.entity';
 import { AccessToken } from '../../auth/entities/access-token.entity';
 import { RefreshToken } from '../../auth/entities/refresh-token.entity';
+import * as bcrypt from 'bcrypt';
 
 @Entity('users')
 export class User {
@@ -18,13 +20,20 @@ export class User {
   email: string;
 
   @Column()
-  password_hash: string;
+  password: string;
 
   @Column({ length: 100 })
-  name: string;
+  firstName: string;
+
+  @Column({ length: 100 })
+  lastName: string;
+
+  //@Column({ default: 'https://default-avatar.com/avatar.png' })
+  @Column({ nullable: true })
+  avatarUrl: string;
 
   @CreateDateColumn()
-  created_at: Date;
+  createdAt: Date;
 
   @OneToMany(() => AuthorizationCode, (code) => code.user)
   authorizationCodes: AuthorizationCode[];
@@ -34,4 +43,9 @@ export class User {
 
   @OneToMany(() => RefreshToken, (token) => token.user)
   refreshTokens: RefreshToken[];
+
+  @BeforeInsert()
+  async hashPassword() {
+    this.password = await bcrypt.hash(this.password, 10);
+  }
 }
