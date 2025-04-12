@@ -9,29 +9,35 @@ import { AuthorizationCode } from '../../auth/entities/authorization-code.entity
 import { AccessToken } from '../../auth/entities/access-token.entity';
 import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 
-@Entity('users')
-export class User {
+@Entity('clients')
+export class Client {
   @PrimaryGeneratedColumn()
   id: number;
 
+  @Column()
+  name: string;
+
   @Column({ unique: true })
-  email: string;
+  client_id: string;
 
   @Column()
-  password_hash: string;
+  client_secret: string;
 
-  @Column({ length: 100 })
-  name: string;
+  @Column('text')
+  redirect_uris: string; // comma-separated or JSON string
+
+  @Column('text')
+  grant_types: string; // comma-separated or JSON string
 
   @CreateDateColumn()
   created_at: Date;
 
-  @OneToMany(() => AuthorizationCode, (code) => code.user)
+  @OneToMany(() => AuthorizationCode, (code) => code.client)
   authorizationCodes: AuthorizationCode[];
 
-  @OneToMany(() => AccessToken, (token) => token.user)
+  @OneToMany(() => AccessToken, (token) => token.client)
   accessTokens: AccessToken[];
 
-  @OneToMany(() => RefreshToken, (token) => token.user)
+  @OneToMany(() => RefreshToken, (token) => token.client)
   refreshTokens: RefreshToken[];
 }

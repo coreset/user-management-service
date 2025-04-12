@@ -8,6 +8,7 @@ import { LoggerModule } from './common/logger/logger.module';
 import { UsersModule } from './modules/users/users.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { RolesModule } from './modules/roles/roles.module';
+import { ClientsModule } from './modules/clients/clients.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { RolesModule } from './modules/roles/roles.module';
     UsersModule,
     AuthModule,
     RolesModule,
+    ClientsModule,
   ],
   controllers: [AppController],
   providers: [AppService],
