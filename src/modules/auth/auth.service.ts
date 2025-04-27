@@ -3,10 +3,15 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { UsersService } from '../users/users.service';
 import { compare } from 'bcrypt';
+import { JwtService } from '@nestjs/jwt';
+import { AuthJwtPayload } from './types/auth-jwtPayload';
 
 @Injectable()
 export class AuthService {
-  constructor(private readonly userService: UsersService) {}
+  constructor(
+    private readonly userService: UsersService,
+    private readonly jwtService: JwtService,
+  ) {}
 
   async validateUser(email: string, password: string) {
     const user = await this.userService.findByEmail(email);
@@ -18,6 +23,11 @@ export class AuthService {
       throw new UnauthorizedException('Invalid credentials');
     }
     return user;
+  }
+
+  login(userId: number) {
+    const payload: AuthJwtPayload = { sub: userId };
+    return this.jwtService.sign(payload);
   }
 
   create(createAuthDto: CreateAuthDto) {
