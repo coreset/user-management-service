@@ -4,13 +4,16 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { LocalLoginDto } from './dto/local-login.dto';
+import { ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('auth')
+@ApiBearerAuth('authorization') // for add authrization header with swagger
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @HttpCode(HttpStatus.OK)
   @UseGuards(AuthGuard('local'))
+  @ApiBody({ type: LocalLoginDto }) // without dto in the request show parameters in the swagger
   @Post('login')
   login(@Request() req) {
     const token = this.authService.login(req.user.id);
@@ -22,8 +25,10 @@ export class AuthController {
     return this.authService.create(createAuthDto);
   }
 
+  @UseGuards(AuthGuard('jwt'))
   @Get()
-  findAll() {
+  findAll(@Request() req) {
+    console.log("headers:", req.headers);
     return this.authService.findAll();
   }
 

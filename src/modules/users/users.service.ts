@@ -19,7 +19,10 @@ export class UsersService {
   }
 
   findOne(id: number) {
-    return `This action returns a #${id} user`;
+    return this.UserRepo.findOne({
+      where: { id },
+      select: ['firstName', 'lastName', 'avatarUrl'],
+    });
   }
 
   async findByEmail(email: string): Promise<User | null> {
