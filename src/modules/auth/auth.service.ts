@@ -5,12 +5,14 @@ import { UsersService } from '../users/users.service';
 import { compare } from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { AuthJwtPayload } from './types/auth-jwtPayload';
+import { ConfigService } from '@nestjs/config';
 
 @Injectable()
 export class AuthService {
   constructor(
     private readonly userService: UsersService,
     private readonly jwtService: JwtService,
+    private readonly configService: ConfigService,
   ) {}
 
   async validateUser(email: string, password: string) {
@@ -27,7 +29,25 @@ export class AuthService {
 
   login(userId: number) {
     const payload: AuthJwtPayload = { sub: userId };
-    return this.jwtService.sign(payload);
+    const token = this.jwtService.sign(payload);
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: this.configService.get<string>('REFRESH_JWT_SECRET'),
+      expiresIn: this.configService.get<string>('REFRESH_JWT_EXPIRE_IN'),
+    });
+    return {
+      id: userId,
+      token,
+      refreshToken,
+    };
+  }
+
+  refreshToken(userId: number) {
+    const payload: AuthJwtPayload = { sub: userId };
+    const token = this.jwtService.sign(payload);
+    return {
+      id: userId,
+      token,
+    };
   }
 
   create(createAuthDto: CreateAuthDto) {

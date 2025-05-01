@@ -17,7 +17,8 @@ export class AuthController {
   @Post('login')
   login(@Request() req) {
     const token = this.authService.login(req.user.id);
-    return {id: req.user.id, token};
+    //return {id: req.user.id, token};
+    return token;
   }
 
   @Post()
@@ -28,8 +29,14 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   @Get()
   findAll(@Request() req) {
-    console.log("headers:", req.headers);
     return this.authService.findAll();
+  }
+
+
+  @UseGuards(AuthGuard('refresh-jwt'))
+  @Post('refresh')
+  refreshToken(@Request() req) {
+    return this.authService.refreshToken(req.user.id);
   }
 
   @Get(':id')
