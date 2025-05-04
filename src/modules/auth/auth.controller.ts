@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpCode, HttpStatus, Request } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpCode, HttpStatus, Request, Req } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
@@ -32,11 +32,11 @@ export class AuthController {
     return this.authService.findAll();
   }
 
-
   @UseGuards(AuthGuard('refresh-jwt'))
   @Post('refresh')
   refreshToken(@Request() req) {
-    return this.authService.refreshToken(req.user.id);
+    const token: string = req.get('authorization')?.replace('Bearer', '')?.trim();
+    return this.authService.refreshToken(req.user.id, token);
   }
 
   @Get(':id')
@@ -52,5 +52,20 @@ export class AuthController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.authService.remove(+id);
+  }
+
+  @UseGuards(AuthGuard('refresh-jwt'))
+  @Post('signout')
+  async signOut(@Request() req) {
+    const refreshToken = req.get('authorization')?.replace('Bearer', '').trim();
+    await this.authService.signOutCurrentDevice(req.user.id, refreshToken);
+    return { message: 'Signed out from current device' };
+  }
+
+  @UseGuards(AuthGuard('refresh-jwt'))
+  @Post('signout-all')
+  async signOutAll(@Request() req) {
+    await this.authService.signOutAllDevices(req.user.id);
+    return { message: 'Signed out from all devices' };
   }
 }

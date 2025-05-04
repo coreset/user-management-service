@@ -25,6 +25,10 @@ export class UsersService {
     });
   }
 
+  async findById(id: number) {
+    return this.UserRepo.findOneBy({ id });
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     const user = await this.UserRepo.findOne({ where: { email } });
     //if (!user) {
