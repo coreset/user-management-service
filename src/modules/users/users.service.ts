@@ -26,7 +26,7 @@ export class UsersService {
   }
 
   async findById(id: number) {
-    return this.UserRepo.findOneBy({ id });
+    return this.UserRepo.findOne({ where: { id }, relations: ['roles'] });
   }
 
   async findByEmail(email: string): Promise<User | null> {

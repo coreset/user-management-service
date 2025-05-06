@@ -11,6 +11,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import { parseExpiry } from 'src/common/utils/time.util';
+import { CurrentUser } from './types/current-user';
 
 @Injectable()
 export class AuthService {
@@ -185,5 +186,15 @@ export class AuthService {
 
   async signOutAllDevices(userId: number): Promise<void> {
     await this.RefreshTokenRepo.delete({ user: { id: userId } });
+  }
+
+  async validateUserRole(userId: number): Promise<CurrentUser> {
+    const user = await this.userService.findById(userId);
+    if (!user) throw new UnauthorizedException('User not found!');
+    const currentUser: CurrentUser = {
+      id: user.id,
+      roles: user.roles,
+    };
+    return currentUser;
   }
 }

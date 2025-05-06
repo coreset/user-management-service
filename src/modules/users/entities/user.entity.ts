@@ -10,6 +10,7 @@ import { AuthorizationCode } from '../../auth/entities/authorization-code.entity
 import { AccessToken } from '../../auth/entities/access-token.entity';
 import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 import * as bcrypt from 'bcrypt';
+import { Role } from 'src/modules/roles/entities/role.entity';
 
 @Entity('users')
 export class User {
@@ -31,6 +32,9 @@ export class User {
   //@Column({ default: 'https://default-avatar.com/avatar.png' })
   @Column({ nullable: true })
   avatarUrl: string;
+
+  @OneToMany(() => Role, (role) => role.user)
+  roles: Role[];
 
   @CreateDateColumn()
   createdAt: Date;

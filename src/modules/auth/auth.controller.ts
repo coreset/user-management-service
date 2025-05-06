@@ -1,10 +1,12 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpCode, HttpStatus, Request, Req } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpCode, HttpStatus, Request, Req, SetMetadata } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { LocalLoginDto } from './dto/local-login.dto';
 import { ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { UserRole } from '../roles/enums/role.enum';
+import { RolesGuard } from '../roles/guards/roles/roles.guard';
 
 @Controller('auth')
 @ApiBearerAuth('authorization') // for add authrization header with swagger
@@ -26,6 +28,8 @@ export class AuthController {
     return this.authService.create(createAuthDto);
   }
 
+  @SetMetadata('role', [UserRole.ADMIN])
+  @UseGuards(RolesGuard)
   @UseGuards(AuthGuard('jwt'))
   @Get()
   findAll(@Request() req) {
@@ -49,6 +53,7 @@ export class AuthController {
     return this.authService.update(+id, updateAuthDto);
   }
 
+  @SetMetadata('role', [UserRole.ADMIN]) // only ADMIN can delete user
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.authService.remove(+id);

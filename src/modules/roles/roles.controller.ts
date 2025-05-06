@@ -1,9 +1,14 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, Request, Req, SetMetadata } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
+import { AuthGuard } from '@nestjs/passport';
+import { ApiBearerAuth } from '@nestjs/swagger';
+import { RolesGuard } from './guards/roles/roles.guard';
+import { UserRole } from './enums/role.enum';
 
 @Controller('roles')
+@ApiBearerAuth('authorization') // for add authrization header with swagger
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
@@ -13,7 +18,8 @@ export class RolesController {
   }
 
   @Get()
-  findAll() {
+  @UseGuards(AuthGuard('jwt'))
+  findAll(@Request() req) {
     return this.rolesService.findAll();
   }
 
@@ -27,8 +33,11 @@ export class RolesController {
     return this.rolesService.update(+id, updateRoleDto);
   }
 
+  @SetMetadata('role', [UserRole.ADMIN])
+  @UseGuards(RolesGuard)
+  @UseGuards(AuthGuard('jwt'))
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  remove(@Param('id') id: string, @Request() req) {
     return this.rolesService.remove(+id);
   }
 }
