@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpCode, HttpStatus, Request, Req, SetMetadata } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpCode, HttpStatus, Request, Req, SetMetadata, Res } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
@@ -72,5 +72,20 @@ export class AuthController {
   async signOutAll(@Request() req) {
     await this.authService.signOutAllDevices(req.user.id);
     return { message: 'Signed out from all devices' };
+  }
+
+  // GOOGLE AUTH 2 ***********************************************************
+  @Get('google/login')
+  @UseGuards(AuthGuard('google'))
+  async googleAuth(@Req() req) {
+    console.log(req.body);
+    // Redirects to Google login
+  }
+
+  @Get('google/callback')
+  @UseGuards(AuthGuard('google'))
+  async googleCallback(@Req() req, @Res() res) { // this is calling from google 
+    const response = await this.authService.login(req.user.id);
+    res.redirect(`http://localhost:5173?token=${response.token}`);
   }
 }

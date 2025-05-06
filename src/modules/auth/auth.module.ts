@@ -10,6 +10,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshJwtStrategy } from './strategies/refresh.strategy';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
+import { GoogleStrategy } from './strategies/google.strategy';
 
 @Module({
   imports: [
@@ -25,7 +26,7 @@ import { TypeOrmModule } from '@nestjs/typeorm';
     TypeOrmModule.forFeature([RefreshToken]),
   ],
   controllers: [AuthController],
-  providers: [AuthService, LocalStrategy, JwtStrategy, RefreshJwtStrategy],
+  providers: [AuthService, LocalStrategy, JwtStrategy, RefreshJwtStrategy, GoogleStrategy],
   exports: [JwtModule, JwtStrategy],
 })
 

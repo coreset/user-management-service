@@ -12,6 +12,7 @@ import { RefreshToken } from './entities/refresh-token.entity';
 import { MoreThanOrEqual, Repository } from 'typeorm';
 import { parseExpiry } from 'src/common/utils/time.util';
 import { CurrentUser } from './types/current-user';
+import { CreateUserDto } from '../users/dto/create-user.dto';
 
 @Injectable()
 export class AuthService {
@@ -180,7 +181,6 @@ export class AuthService {
         return;
       }
     }
-
     throw new ForbiddenException('Refresh token not found or already invalidated');
   }
 
@@ -196,5 +196,11 @@ export class AuthService {
       roles: user.roles,
     };
     return currentUser;
+  }
+
+  async validateGoogleUser(googleUser: CreateUserDto) {
+    const user = await this.userService.findByEmail(googleUser.email);
+    if (user) return user;
+    return await this.userService.create(googleUser);
   }
 }
