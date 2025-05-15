@@ -16,7 +16,7 @@ import { ClientsModule } from './modules/clients/clients.module';
       isGlobal: true, // Makes ConfigModule available globally
     }),
 
-    //// database configuration  //////////////////////////////////////////////////////////
+    // database configuration  //////////////////////////////////////////////////////////
     //TypeOrmModule.forRootAsync({
     //  imports: [ConfigModule],
     //  useFactory: async (configService: ConfigService) => {
@@ -30,7 +30,7 @@ import { ClientsModule } from './modules/clients/clients.module';
     //      entities: [__dirname + '/**/*.entity{.ts,.js}'], // Path to your entities
     //      synchronize: configService.get('DB_SYNCHRONIZE') === 'true', // Sync database every app startup (development only)
     //    };
-    //
+    //    console.log("config data ::", dbConfig);
     //    const dataSource = new DataSource(dbConfig);
     //    try {
     //      await dataSource.initialize();

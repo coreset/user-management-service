@@ -4,7 +4,6 @@ import { ExtractJwt, Strategy } from 'passport-jwt';
 import { AuthJwtPayload } from '../types/auth-jwtPayload';
 import { Injectable } from '@nestjs/common';
 import { AuthService } from '../auth.service';
-import { UserRole } from 'src/modules/roles/enums/role.enum';
 import { CurrentUser } from '../types/current-user';
 
 @Injectable()

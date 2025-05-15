@@ -29,6 +29,10 @@ export class UsersService {
     return this.UserRepo.findOne({ where: { id }, relations: ['roles'] });
   }
 
+  updatePasswordById(userId: number, newHashedPassword: string): Promise<any> {
+    return this.UserRepo.update(userId, { password: newHashedPassword });
+  }
+
   async findByEmail(email: string): Promise<User | null> {
     const user = await this.UserRepo.findOne({ where: { email } });
     //if (!user) {

@@ -1,8 +1,8 @@
-import { ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException, UnauthorizedException } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { UsersService } from '../users/users.service';
-import { compare } from 'bcrypt';
+import { compare, hash } from 'bcrypt';
 import { JwtService } from '@nestjs/jwt';
 import { AuthJwtPayload } from './types/auth-jwtPayload';
 import { ConfigService } from '@nestjs/config';
@@ -152,8 +152,10 @@ export class AuthService {
     return 'This action adds a new auth';
   }
 
-  findAll() {
-    return `This action returns all auth`;
+  findAll(userId: number) {
+    return {
+      id: userId,
+    };
   }
 
   findOne(id: number) {
@@ -202,5 +204,22 @@ export class AuthService {
     const user = await this.userService.findByEmail(googleUser.email);
     if (user) return user;
     return await this.userService.create(googleUser);
+  }
+
+  async changePassword(userId: number, oldPassword: string, newPassword: string) {
+    // find the user
+    const user = await this.userService.findById(userId);
+    if (!user) throw new UnauthorizedException('User not found!');
+    // compare the old password with the password in DB
+    const isPasswordMatch = await compare(oldPassword, user.password);
+    // change user's password with HASH
+    if (!isPasswordMatch) {
+      throw new BadRequestException('Old password is incorrect.');
+    }
+    // hash new password
+    const hashedPassword = await hash(newPassword, 10);
+    await this.userService.updatePasswordById(userId, hashedPassword);
+
+    return { message: 'Password updated successfully' };
   }
 }

@@ -29,6 +29,8 @@ async function bootstrap() {
   // Enable Global Validation ////////////
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   // end \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
+  //
+  app.enableCors();
 
   await app.listen(process.env.PORT ?? 3000);
 }

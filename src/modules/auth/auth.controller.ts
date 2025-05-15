@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpCode, HttpStatus, Request, Req, SetMetadata, Res } from '@nestjs/common';
+import { Controller, Get, Post, Body, Patch, Param, Delete, UseGuards, HttpCode, HttpStatus, Request, Req, SetMetadata, Res, Put } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
@@ -7,6 +7,7 @@ import { LocalLoginDto } from './dto/local-login.dto';
 import { ApiBody, ApiBearerAuth } from '@nestjs/swagger';
 import { UserRole } from '../roles/enums/role.enum';
 import { RolesGuard } from '../roles/guards/roles/roles.guard';
+import { ChangePasswordDto } from './dto/change-password.dto';
 
 @Controller('auth')
 @ApiBearerAuth('authorization') // for add authrization header with swagger
@@ -33,7 +34,7 @@ export class AuthController {
   @UseGuards(AuthGuard('jwt'))
   @Get()
   findAll(@Request() req) {
-    return this.authService.findAll();
+    return this.authService.findAll(req.user.id);
   }
 
   @UseGuards(AuthGuard('refresh-jwt'))
@@ -68,7 +69,7 @@ export class AuthController {
   }
 
   @UseGuards(AuthGuard('refresh-jwt'))
-  @Post('signout-all')
+  @Post('signout/all')
   async signOutAll(@Request() req) {
     await this.authService.signOutAllDevices(req.user.id);
     return { message: 'Signed out from all devices' };
@@ -86,6 +87,20 @@ export class AuthController {
   @UseGuards(AuthGuard('google'))
   async googleCallback(@Req() req, @Res() res) { // this is calling from google 
     const response = await this.authService.login(req.user.id);
-    res.redirect(`http://localhost:5173?token=${response.token}`);
+    res.redirect(`http://localhost:4200/login-success?token=${response.token}&refreshToken=${response.refreshToken}`);
+  }
+
+  // change password **********************************************************  
+  @UseGuards(AuthGuard('jwt'))
+  @Put('change-password')
+  async changePassword(
+    @Body() changePasswordDto: ChangePasswordDto,
+    @Req() req,
+  ) {
+    return this.authService.changePassword(
+      req.user.id,
+      changePasswordDto.oldPassword,
+      changePasswordDto.newPassword,
+    );
   }
 }
