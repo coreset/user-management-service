@@ -26,7 +26,7 @@ async function bootstrap() {
   }
   // end of database connection check \\\\
 
-  // Enable Global Validation ////////////
+  // Enable Global Validation Pipe ////////////
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   // end \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
   //

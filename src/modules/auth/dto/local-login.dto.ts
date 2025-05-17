@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString } from 'class-validator';
+import { IsEmail, IsString, Matches, MinLength } from 'class-validator';
 
 export class LocalLoginDto {
   @ApiProperty({
@@ -17,5 +17,7 @@ export class LocalLoginDto {
     example: '******',
   })
   @IsString()
+  @MinLength(6)
+  @Matches(/^(?=.*[0-9])/, { message: 'Password must contain at lease on number' })
   password: string;
 }

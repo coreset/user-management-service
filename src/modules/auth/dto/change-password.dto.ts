@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { IsString, Matches, MinLength } from 'class-validator';
 
 export class ChangePasswordDto {
   @ApiProperty({
@@ -16,5 +16,7 @@ export class ChangePasswordDto {
     example: '******',
   })
   @IsString()
+  @MinLength(6)
+  @Matches(/^(?=.*[0-9])/, { message: 'Password must contain at lease on number' })
   newPassword: string;
 }

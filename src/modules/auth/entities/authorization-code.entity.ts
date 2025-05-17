@@ -15,9 +15,9 @@ export class AuthorizationCode {
   @JoinColumn({ name: 'client_id', referencedColumnName: 'client_id' })
   client: Client;
 
-  @Column('text')
-  redirect_uri: string;
+  @Column({ type: 'text', name: 'redirect_uri' })
+  redirectUri: string;
 
-  @Column({ type: 'timestamp' })
-  expires_at: Date;
+  @Column({ type: 'timestamp', name: 'expires_at' })
+  expiresAt: Date;
 }
