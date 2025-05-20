@@ -1,5 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail } from 'class-validator';
+import { IsEmail, IsString } from 'class-validator';
+
+enum NotifyType {
+  URL = 'url',
+  CODE = 'code',
+}
 
 export class ForgotPasswordDto {
   @ApiProperty({
@@ -9,4 +14,12 @@ export class ForgotPasswordDto {
   })
   @IsEmail()
   email: string;
+
+  @ApiProperty({
+    name: 'type',
+    required: true,
+    example: 'token or code',
+  })
+  @IsString()
+  type: NotifyType;
 }

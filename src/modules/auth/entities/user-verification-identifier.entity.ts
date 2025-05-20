@@ -9,13 +9,16 @@ import {
 import { User } from '../../users/entities/user.entity';
 import { Client } from '../../clients/entities/client.entity';
 
-@Entity('password_reset_tokens')
-export class PasswordResetToken {
+@Entity('user_verification_identifiers')
+export class UserVerificationIdentifier {
   @PrimaryGeneratedColumn()
   id: number;
 
   @Column({ name: 'token' })
   token: string; // Hashed version only
+
+  @Column({ type: 'varchar', length: 10 })
+  type: string; //'email' | 'code'; // Token type
 
   @ManyToOne(() => User)
   @JoinColumn({ name: 'user_id' })

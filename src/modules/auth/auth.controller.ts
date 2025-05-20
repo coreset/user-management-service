@@ -26,7 +26,7 @@ import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { Response } from 'express';
 import { AuthRequest as Request } from './types/request';
-import { ValidateForgotPasswordTokenDto } from './dto/validate-forgot-password-token.dto';
+import { VerifyIdentifierDto } from './dto/verify-indentifier.dto';
 
 @Controller('auth')
 @ApiBearerAuth('authorization') // for add authrization header with swagger
@@ -124,15 +124,20 @@ export class AuthController {
   }
 
   @Post('forgot-password')
-  forgotPassword(@Body() forgotPasswordDto: any) {
-    return this.authService.forgotPassword(forgotPasswordDto.email);
+  forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+    return this.authService.forgotPassword(
+      forgotPasswordDto.email,
+      forgotPasswordDto.type,
+    );
   }
 
-  @Post('validate-forgot-password')
-  validateForgotPasswordToken(@Body() validateForgotPasswordTokenDto: ValidateForgotPasswordTokenDto) {
-    return this.authService.validateForgotPasswordToken(
-      validateForgotPasswordTokenDto.token,
-      validateForgotPasswordTokenDto.userId,
+  @Post('verify-identifier')
+  verifyIdentifier(
+    @Body() verifyIdentifierDto: VerifyIdentifierDto,
+  ) {
+    return this.authService.verifyIdentifier(
+      verifyIdentifierDto.token,
+      verifyIdentifierDto.user,
     );
   }
 }

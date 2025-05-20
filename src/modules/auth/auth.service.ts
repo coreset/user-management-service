@@ -16,11 +16,18 @@ import * as argon2 from 'argon2';
 import { randomBytes } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RefreshToken } from './entities/refresh-token.entity';
-import { PasswordResetToken } from './entities/password-reset-token.entity';
+import { UserVerificationIdentifier } from './entities/user-verification-identifier.entity';
 import { MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { parseExpiry } from 'src/common/utils/time.util';
 import { CurrentUser } from './types/current-user';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+
+
+enum NotifyType {
+  URL= 'url',
+  CODE= 'code',
+}
+
 
 @Injectable()
 export class AuthService {
@@ -29,17 +36,17 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     @InjectRepository(RefreshToken) private RefreshTokenRepo: Repository<RefreshToken>,
-    @InjectRepository(PasswordResetToken) private PasswordResetTokenRepo: Repository<PasswordResetToken>,
+    @InjectRepository(UserVerificationIdentifier) private UserVerificationIdentifierRepo: Repository<UserVerificationIdentifier>,
   ) {}
 
   async validateUser(email: string, password: string) {
     const user = await this.userService.findByEmail(email);
     if (!user) {
-      throw new UnauthorizedException('User Not found!');
+      throw new UnauthorizedException('Invalid email or password');
     }
     const isPasswordMatch = await compare(password, user.password);
     if (!isPasswordMatch) {
-      throw new UnauthorizedException('Invalid credentials');
+      throw new UnauthorizedException('Invalid email or password');
     }
     return user;
   }
@@ -232,7 +239,7 @@ export class AuthService {
     return { message: 'Password updated successfully' };
   }
 
-  async forgotPassword(email: string) {
+  async forgotPassword(email: string, type: NotifyType) {
     // 1. Find user
     const user = await this.userService.findByEmail(email);
     if (!user) {
@@ -242,56 +249,96 @@ export class AuthService {
     }
 
     // 2. Invalidate any existing tokens
-    await this.PasswordResetTokenRepo.delete({
+    await this.UserVerificationIdentifierRepo.delete({
       user: { id: user.id },
       used: false,
+      type,
     });
 
-    // 3. Generate token and expiration
-    const resetToken: string = randomBytes(32).toString('hex');
-    const expiresIn: string = this.configService.get<string>('PASSWORD_RESET_TOKEN_EXPIRE_IN', '');
-    const expiresAt: Date = new Date(Date.now() + parseExpiry(expiresIn));
+    // 3. Generate expiration
+    const expiresIn = this.configService.get<string>('PASSWORD_RESET_TOKEN_EXPIRE_IN', '');
+    const expiresAt = new Date(Date.now() + parseExpiry(expiresIn));
 
-    // 4. Store hashed token
-    const hashedToken: string = await hash(resetToken, 10);
-    await this.PasswordResetTokenRepo.save({
-      token: hashedToken,
-      user,
-      expiresAt,
-    });
+    if (type === NotifyType.URL) {
+      // Generate token 
+      const resetToken = randomBytes(32).toString('hex');
+      const hashedToken = await hash(resetToken, 10);
 
-    // 5. Generate reset URL
-    const frontendUrl = this.configService.get<string>('FRONTEND_BASE_URL', '');
+      // Store token
+      await this.UserVerificationIdentifierRepo.save({
+        token: hashedToken,
+        user,
+        expiresAt,
+        type: NotifyType.URL,
+      });
 
-    const resetUrl = new URL(`${frontendUrl}/reset-password`);
+      const frontendUrl = this.configService.get<string>('FRONTEND_BASE_URL', '');
+      const resetUrl = new URL(`${frontendUrl}/verify-identifier`);
+      resetUrl.searchParams.set('token', resetToken);
+      resetUrl.searchParams.set('id', user.id.toString());
+      console.log('reset url:', resetUrl.toString());
 
-    resetUrl.searchParams.set('token', resetToken);
-    resetUrl.searchParams.set('id', user.id.toString());
+    } else if (type === NotifyType.CODE) {
+      // Generate pin code
+      const rawCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit
+      const hashedCode = await hash(rawCode, 10);
 
-    // 6. Send email
-    console.log('reset url :', resetUrl);
+      // Store pin code
+      await this.UserVerificationIdentifierRepo.save({
+        token: hashedCode,
+        user,
+        expiresAt,
+        type: NotifyType.CODE,
+      });
+
+      console.log(`Generated code for user ${user.email}: ${rawCode}`);
+      // Send via SMS or email here
+    }
     // 7. Message to client
     return { message: 'if this user exits, they will receive an email' };
   }
 
-  async validateForgotPasswordToken(rawToken: string, userId: number) {
+  async verifyIdentifier(secret: string, user: number | string) {
+    let userId: number;
+    let type: NotifyType;
+    console.log('verifyIdentifier ::', secret, user);
+
+    if (typeof user === 'string' && isNaN(Number(user))) {
+      // Type: email
+      const userEntity = await this.userService.findByEmail(user);
+      if (!userEntity) {
+        throw new UnauthorizedException('Invalid user');
+      }
+      userId = userEntity.id;
+      type = NotifyType.CODE;
+      console.log('code', type, userId);
+    } else {
+      // Type: code
+      userId = Number(user);
+      if (isNaN(userId)) {
+        throw new UnauthorizedException('Invalid user identifier');
+      }
+      type = NotifyType.URL;
+      console.log('url', type, userId);
+    }
+
     // 1. Find all active tokens for user
-    const tokens = await this.PasswordResetTokenRepo.find({
+    const tokens = await this.UserVerificationIdentifierRepo.find({
       where: {
         user: { id: userId },
         used: false,
         expiresAt: MoreThan(new Date()),
+        type,
       },
     });
-    console.log("validate forgot password", tokens);
 
     // 2. Compare against each (bcrypt.compare is slow-by-design)
     for (const tokenRecord of tokens) {
-      if (await compare(rawToken, tokenRecord.token)) {
-        //return tokenRecord; // Found valid token
+      if (await compare(secret, tokenRecord.token)) {
         return this.login(userId);
       }
     }
-    throw new UnauthorizedException('Token not valid or expired !'); // 401 error Unauthorized
+
+    throw new UnauthorizedException('Token not valid or expired!');
   }
 }

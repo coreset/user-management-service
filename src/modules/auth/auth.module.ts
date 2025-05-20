@@ -10,7 +10,7 @@ import { JwtStrategy } from './strategies/jwt.strategy';
 import { RefreshJwtStrategy } from './strategies/refresh.strategy';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GoogleStrategy } from './strategies/google.strategy';
-import { PasswordResetToken } from './entities/password-reset-token.entity';
+import { UserVerificationIdentifier } from './entities/user-verification-identifier.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
 
 @Module({
@@ -24,7 +24,7 @@ import { RefreshToken } from './entities/refresh-token.entity';
         signOptions: { expiresIn: configService.get<string>('JWT_EXPIRE_IN') },
       }),
     }),
-    TypeOrmModule.forFeature([RefreshToken, PasswordResetToken]),
+    TypeOrmModule.forFeature([RefreshToken, UserVerificationIdentifier]),
   ],
   controllers: [AuthController],
   providers: [
