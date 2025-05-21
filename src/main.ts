@@ -1,9 +1,9 @@
-import { NestFactory } from '@nestjs/core';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 import { AppLoggerService } from './common/logger/logger.service';
 import { DataSource } from 'typeorm';
 import { createSwaggerDocument } from './common/swagger/swagger';
-import { ValidationPipe } from '@nestjs/common';
+import { ValidationPipe, ClassSerializerInterceptor } from '@nestjs/common';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule);
@@ -30,6 +30,10 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
   // end \\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\\
   //
+
+  //not to return password when create user ///////////////////////////
+  app.useGlobalInterceptors(new ClassSerializerInterceptor(app.get(Reflector)));
+
   app.enableCors();
 
   await app.listen(process.env.PORT ?? 3000);

@@ -301,7 +301,6 @@ export class AuthService {
   async verifyIdentifier(secret: string, user: number | string) {
     let userId: number;
     let type: NotifyType;
-    console.log('verifyIdentifier ::', secret, user);
 
     if (typeof user === 'string' && isNaN(Number(user))) {
       // Type: email
@@ -311,7 +310,6 @@ export class AuthService {
       }
       userId = userEntity.id;
       type = NotifyType.CODE;
-      console.log('code', type, userId);
     } else {
       // Type: code
       userId = Number(user);
@@ -319,7 +317,6 @@ export class AuthService {
         throw new UnauthorizedException('Invalid user identifier');
       }
       type = NotifyType.URL;
-      console.log('url', type, userId);
     }
 
     // 1. Find all active tokens for user

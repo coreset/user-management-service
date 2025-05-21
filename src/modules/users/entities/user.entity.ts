@@ -11,6 +11,7 @@ import { AccessToken } from '../../auth/entities/access-token.entity';
 import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 import * as bcrypt from 'bcrypt';
 import { Role } from 'src/modules/roles/entities/role.entity';
+import { Exclude } from 'class-transformer';
 
 @Entity('users')
 export class User {
@@ -21,6 +22,7 @@ export class User {
   email: string;
 
   @Column()
+  @Exclude() // This hides the field from response
   password: string;
 
   @Column({ length: 100 })
