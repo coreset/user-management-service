@@ -1,7 +1,16 @@
-import { Column, Entity, JoinColumn, ManyToOne, PrimaryGeneratedColumn } from 'typeorm';
+import {
+  Column,
+  Entity,
+  JoinColumn,
+  ManyToOne,
+  ManyToMany,
+  JoinTable,
+  PrimaryGeneratedColumn,
+} from 'typeorm';
 import { UserRole } from '../enums/role.enum';
 import { Client } from 'src/modules/clients/entities/client.entity';
 import { User } from 'src/modules/users/entities/user.entity';
+import { Permission } from 'src/modules/permission/entities/permission.entity';
 
 @Entity('roles')
 export class Role {
@@ -19,7 +28,12 @@ export class Role {
   @JoinColumn({ name: 'client_id' })
   client: Client;
 
-  @ManyToOne(() => User, (user) => user.roles)
-  @JoinColumn({ name: 'user_id'})
-  user: User;
+  @ManyToMany(() => Permission, (permission) => permission.roles, { cascade: true })
+  @JoinTable({
+    name: 'role_permissions',
+  })
+  permissions: Permission[];
+
+  @ManyToMany(() => User, (user) => user.roles)
+  users: User[];
 }

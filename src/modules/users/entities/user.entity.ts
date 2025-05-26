@@ -5,6 +5,8 @@ import {
   CreateDateColumn,
   OneToMany,
   BeforeInsert,
+  ManyToMany,
+  JoinTable,
 } from 'typeorm';
 import { AuthorizationCode } from '../../auth/entities/authorization-code.entity';
 import { AccessToken } from '../../auth/entities/access-token.entity';
@@ -35,7 +37,15 @@ export class User {
   @Column({ nullable: true })
   avatarUrl: string;
 
-  @OneToMany(() => Role, (role) => role.user)
+  /* Many-to-Many
+   * user-1 can have 'USER' and 'EDITOR' roles
+   * user-1 and user-2 can have 'EDITOR' role.
+   **/
+
+  @ManyToMany(() => Role, (role) => role.users, { cascade: true })
+  @JoinTable({
+    name: 'user_roles',
+  })
   roles: Role[];
 
   @CreateDateColumn()
