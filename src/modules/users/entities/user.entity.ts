@@ -7,6 +7,7 @@ import {
   BeforeInsert,
   ManyToMany,
   JoinTable,
+  DeleteDateColumn,
 } from 'typeorm';
 import { AuthorizationCode } from '../../auth/entities/authorization-code.entity';
 import { AccessToken } from '../../auth/entities/access-token.entity';
@@ -27,15 +28,18 @@ export class User {
   @Exclude() // This hides the field from response
   password: string;
 
-  @Column({ length: 100 })
+  @Column({ length: 100, name: 'first_name' })
   firstName: string;
 
-  @Column({ length: 100 })
+  @Column({ length: 100, name: 'last_name' })
   lastName: string;
 
   //@Column({ default: 'https://default-avatar.com/avatar.png' })
-  @Column({ nullable: true })
+  @Column({ nullable: true, name: 'avatar_url' })
   avatarUrl: string;
+
+  @DeleteDateColumn({ name: 'deleted_at' })
+  deletedAt?: Date;
 
   /* Many-to-Many
    * user-1 can have 'USER' and 'EDITOR' roles
@@ -43,12 +47,9 @@ export class User {
    **/
 
   @ManyToMany(() => Role, (role) => role.users, { cascade: true })
-  @JoinTable({
-    name: 'user_roles',
-  })
   roles: Role[];
 
-  @CreateDateColumn()
+  @CreateDateColumn({ name: 'created_at'})
   createdAt: Date;
 
   @OneToMany(() => AuthorizationCode, (code) => code.user)

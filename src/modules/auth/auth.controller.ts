@@ -20,7 +20,7 @@ import { UpdateAuthDto } from './dto/update-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { LocalLoginDto } from './dto/local-login.dto';
 import { ApiBody, ApiBearerAuth } from '@nestjs/swagger';
-import { UserRole } from '../roles/enums/role.enum';
+import { FixedUserRole } from '../roles/enums/role.enum';
 import { RolesGuard } from '../roles/guards/roles/roles.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -48,7 +48,7 @@ export class AuthController {
     return this.authService.create(createAuthDto);
   }
 
-  @SetMetadata('role', [UserRole.ADMIN])
+  @SetMetadata('role', [FixedUserRole.ADMIN])
   @UseGuards(RolesGuard)
   @UseGuards(AuthGuard('jwt'))
   @Get()
@@ -73,7 +73,7 @@ export class AuthController {
     return this.authService.update(+id, updateAuthDto);
   }
 
-  @SetMetadata('role', [UserRole.ADMIN]) // only ADMIN can delete user
+  @SetMetadata('role', [FixedUserRole.ADMIN]) // only ADMIN can delete user
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.authService.remove(+id);
