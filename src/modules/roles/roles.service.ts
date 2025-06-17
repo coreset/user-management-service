@@ -3,7 +3,7 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Role } from './entities/role.entity';
-import { QueryFailedError, Repository, UpdateResult } from 'typeorm';
+import { In, Like, QueryFailedError, Repository, UpdateResult } from 'typeorm';
 import { AppLoggerService } from 'src/common/logger/logger.service';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
@@ -102,7 +102,8 @@ export class RolesService {
 
     if (name && page && limit) {
       const [items, total] = await this.RoleRepo.findAndCount({
-        where: { name },
+        //where: { name },
+        where: { name: Like(`%${name}%`) },
         skip: (page - 1) * limit,
         take: limit,
       });
@@ -195,6 +196,12 @@ export class RolesService {
     this.logger.log(`Role with id ${id} successfully restored`, RolesService.name);
   }
 
+  findByIdList(idList: number[]): Promise<any> {
+    return this.RoleRepo.find({
+      where: {id : In(idList)}
+    });
+  }
+
   async assignUsersToRole(roleId: number, userIdList: number[]) {
     const role: Role = (await this.RoleRepo.findOne({
       where: { id: roleId },
@@ -226,7 +233,7 @@ export class RolesService {
 
     role.users = [...role.users, ...usersToAdd]; // merge usersToAdd
     await this.RoleRepo.save(role);
-    this.logger.warn(
+    this.logger.log(
       `Users with id ${foundIds.toString()} assign successfully`,
       RolesService.name,
     );
