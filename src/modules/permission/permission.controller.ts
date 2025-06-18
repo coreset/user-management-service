@@ -40,4 +40,12 @@ export class PermissionController {
   ) {
     return this.permissionService.assignRoleToPermission(permissionId, assignRolesDto.roleIdList);
   }
+
+  @Post(':permissionId/unassign-roles')
+  unassignRolesToPermission(
+    @Param('permissionId', ParseIntPipe) permissionId: number,
+    @Body() assignRolesDto: AssignRolesDto,
+  ) {
+    return this.permissionService.assignRoleToPermission(permissionId, assignRolesDto.roleIdList);
+  }
 }

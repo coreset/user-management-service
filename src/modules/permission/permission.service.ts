@@ -119,4 +119,50 @@ export class PermissionService {
       assignedRoleIds: foundIds,
     };
   }
+
+  async unassignRoleToPermission(permissionId: number, roleIdList: number[]):Promise<any> {
+
+    // Check is permissionId existed
+    const permission: Permission = (await this.PermissionRepo.findOne({
+      where: { id: permissionId },
+      relations: ['roles'],
+    })) as Permission;
+
+    // If permission not existed
+    if (!permission) {
+      this.logger.warn(
+        `Permission id ${permissionId} not found from database`,
+        PermissionService.name,
+      );
+      throw new NotFoundException(`Permission with id ${permissionId} not found`);
+    }
+
+    // Get role list from role id list
+    const rolesToRemove: Role[] = await this.roleService.findByIdList(roleIdList);
+
+    const foundIds:number[] = rolesToRemove.map((r) => r.id );
+    const missingIds:number[] = roleIdList.filter((id)=> !foundIds.includes(id));
+
+    if (missingIds.length > 0) {
+      this.logger.warn(
+        `Role with id ${missingIds.toString()} not found`,
+        PermissionService.name,
+      );
+      throw new BadRequestException(
+        `Role not found for IDS: ${missingIds.join(', ')}`,
+      );
+    }
+    permission.roles = permission.roles.filter((role) => foundIds.indexOf(role.id));
+    await this.PermissionRepo.save(permission);
+    this.logger.log(
+      `Roles with id ${foundIds.toString()} unassign successfully`,
+      PermissionService.name,
+    );
+
+    return {
+      message: 'Roles successfully unassigned to the permission',
+      permissionId: permission.id,
+      assignedRoleIds: foundIds,
+    };
+  }
 }
