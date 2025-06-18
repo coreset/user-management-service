@@ -2,7 +2,6 @@ import { Controller, Get, Post, Body, Patch, Param, Delete, ParseIntPipe } from 
 import { PermissionService } from './permission.service';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
-import { AssignRolesDto } from './dto/asign-roles.dto';
 
 @Controller('permission')
 export class PermissionController {
@@ -31,21 +30,5 @@ export class PermissionController {
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.permissionService.remove(+id);
-  }
-
-  @Post(':permissionId/assign-roles')
-  assignRolesToPermission(
-    @Param('permissionId', ParseIntPipe) permissionId: number,
-    @Body() assignRolesDto: AssignRolesDto,
-  ) {
-    return this.permissionService.assignRoleToPermission(permissionId, assignRolesDto.roleIdList);
-  }
-
-  @Post(':permissionId/unassign-roles')
-  unassignRolesToPermission(
-    @Param('permissionId', ParseIntPipe) permissionId: number,
-    @Body() assignRolesDto: AssignRolesDto,
-  ) {
-    return this.permissionService.assignRoleToPermission(permissionId, assignRolesDto.roleIdList);
   }
 }

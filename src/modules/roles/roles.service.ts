@@ -7,6 +7,8 @@ import { In, Like, QueryFailedError, Repository, UpdateResult } from 'typeorm';
 import { AppLoggerService } from 'src/common/logger/logger.service';
 import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
+import { PermissionService } from '../permission/permission.service';
+import { Permission } from '../permission/entities/permission.entity';
 
 @Injectable()
 export class RolesService {
@@ -15,6 +17,7 @@ export class RolesService {
     private readonly RoleRepo: Repository<Role>,
     private readonly logger: AppLoggerService,
     private readonly usersService: UsersService,
+    private readonly permissionService: PermissionService,
   ) {}
 
   //async create(createRoleDto: CreateRoleDto): Promise<Role | null> {
@@ -245,6 +248,49 @@ export class RolesService {
     };
   }
 
+  async assignPermissionsToRole(roleId: number, permissionIdList: number[]) {
+    const role: Role = (await this.RoleRepo.findOne({
+      where: { id: roleId },
+      relations: ['permissions'],
+    })) as Role;
+
+    if (!role) {
+      this.logger.warn(
+        `Role id ${roleId} not found from the database`,
+        RolesService.name,
+      );
+      throw new NotFoundException(`Role with id ${roleId} not found`);
+    }
+
+    const permissionsToAdd: Permission[] = await this.permissionService.findByIdList(permissionIdList);
+
+    const foundIds: number[] = permissionsToAdd.map((u) => u.id);
+    const missingIds = permissionIdList.filter((id) => !foundIds.includes(id));
+
+    if (missingIds.length > 0) {
+      this.logger.warn(
+        `Permissions with id ${missingIds.toString()} not found`,
+        RolesService.name,
+      );
+      throw new BadRequestException(
+        `Permissions not found for IDs: ${missingIds.join(', ')}`,
+      );
+    }
+
+    role.permissions = [...role.permissions, ...permissionsToAdd]; // merge permissionsToAdd
+    await this.RoleRepo.save(role);
+    this.logger.log(
+      `Permissions with id ${foundIds.toString()} assign successfully`,
+      RolesService.name,
+    );
+
+    return {
+      message: 'Permissions successfully assigned to the role',
+      roleId: role.id,
+      assignedPermissionIds: foundIds,
+    };
+  }
+
   async unassignUsersFromRole(roleId: number, userIdList: number[]) {
     const role: Role = (await this.RoleRepo.findOne({
       where: { id: roleId },
@@ -288,6 +334,52 @@ export class RolesService {
       message: 'Users successfully unassigned from the role',
       roleId: role.id,
       unassignedUserIds: foundIds,
+    };
+  }
+
+  async unassignPermissionsFromRole(roleId: number, permissionIdList: number[]) {
+    const role: Role = (await this.RoleRepo.findOne({
+      where: { id: roleId },
+      relations: ['permissions'],
+    })) as Role;
+
+    if (!role) {
+      this.logger.warn(
+        `Role id ${roleId} not found from the database`,
+        RolesService.name,
+      );
+      throw new NotFoundException(`Role with id ${roleId} not found`);
+    }
+
+    const permissionsToRemove: User[] = await this.permissionService.findByIdList(permissionIdList);
+
+    const foundIds: number[] = permissionsToRemove.map((u) => u.id);
+    const missingIds = permissionIdList.filter((id) => !foundIds.includes(id));
+
+    if (missingIds.length > 0) {
+      this.logger.warn(
+        `Permissions with id ${missingIds.toString()} not found`,
+        RolesService.name,
+      );
+      throw new BadRequestException(
+        `Permissions not found for IDs: ${missingIds.join(', ')}`,
+      );
+    }
+
+    // Filter out permissions to be removed
+    role.permissions = role.permissions.filter((permission) => !foundIds.includes(permission.id));
+
+    await this.RoleRepo.save(role);
+
+    this.logger.log(
+      `Permissions with id ${foundIds.toString()} unassigned successfully from role ${roleId}`,
+      RolesService.name,
+    );
+
+    return {
+      message: 'Permission(s) successfully unassigned from the role',
+      roleId: role.id,
+      unassignedPermissionIds: foundIds,
     };
   }
 }

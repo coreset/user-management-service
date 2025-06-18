@@ -1,4 +1,10 @@
-import { Entity, PrimaryGeneratedColumn, Column, ManyToMany, DeleteDateColumn } from 'typeorm';
+import {
+  Entity,
+  PrimaryGeneratedColumn,
+  Column,
+  ManyToMany,
+  DeleteDateColumn,
+} from 'typeorm';
 import { Role } from 'src/modules/roles/entities/role.entity';
 import { Exclude } from 'class-transformer';
 

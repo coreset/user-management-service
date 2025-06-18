@@ -23,6 +23,7 @@ import { Request } from 'express';
 import { PaginateRoleDto } from './dto/paginate-role.dto';
 import { SearchRoleDto } from './dto/search-role.dto';
 import { AssignUsersDto } from './dto/asign-users.dto';
+import { AssignPermissionsDto } from './dto/asign-permissions.dto';
 
 @Controller('roles')
 @ApiBearerAuth('authorization') // for add authrization header with swagger
@@ -84,5 +85,21 @@ export class RolesController {
     @Body() assignUsersDto: AssignUsersDto,
   ) {
     return this.rolesService.unassignUsersFromRole(roleId, assignUsersDto.userIdList);
+  }
+
+  @Post(':roleId/assign-permissions')
+  assignPermissionsToRole(
+    @Param('roleId', ParseIntPipe) roleId: number,
+    @Body() assignPermissionsDto: AssignPermissionsDto,
+  ) {
+    return this.rolesService.assignPermissionsToRole(roleId, assignPermissionsDto.permissionIdList);
+  }
+
+  @Post(':roleId/unassign-permissions')
+  unassignPermissionsToRole(
+    @Param('roleId', ParseIntPipe) roleId: number,
+    @Body() assignPermissionsDto: AssignPermissionsDto,
+  ) {
+    return this.rolesService.unassignPermissionsFromRole(roleId, assignPermissionsDto.permissionIdList);
   }
 }
