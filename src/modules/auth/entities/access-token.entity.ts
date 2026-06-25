@@ -7,7 +7,7 @@ export class AccessToken {
   @PrimaryColumn()
   token: string;
 
-  @ManyToOne(() => User, (user) => user.accessTokens)
+  @ManyToOne(() => User, (user) => user.accessTokens, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 

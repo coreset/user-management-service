@@ -7,7 +7,7 @@ export class AuthorizationCode {
   @PrimaryColumn()
   code: string;
 
-  @ManyToOne(() => User, (user) => user.authorizationCodes)
+  @ManyToOne(() => User, (user) => user.authorizationCodes, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 

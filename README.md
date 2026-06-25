@@ -27,3 +27,42 @@ This application inclided following 4 modules
 * auth/strategies/refresh.strategy.ts for handle refresh token (validate refresh token)   
 * auth/strategies/google.strategy.ts for handle google auth20  
 
+---
+
+## Keycloak Comparison
+
+### What This Service Has
+
+| Feature | Status | Notes |
+|---|---|---|
+| Local login (email/password) | Done | bcrypt hashing |
+| JWT access tokens | Done | 60s expiry |
+| Refresh token rotation | Done | Argon2 hashed, 7d expiry |
+| Google OAuth 2.0 | Done | Auto user provisioning |
+| Role-based access control | Done | ADMIN / EDITOR / USER guard |
+| Permission management | Partial | Model exists, not enforced on endpoints yet |
+| Role ↔ Permission assignment | Done | Many-to-many wired |
+| Multi-device sign out | Done | Per-device & all-devices |
+| Soft delete (users/roles) | Done | Audit-friendly |
+| Forgot password (URL/code) | Done | 120s token TTL |
+| OAuth2 client registry | Partial | Entity + CRUD, auth code flow not implemented |
+
+### What's Missing vs. Keycloak
+
+| Keycloak Feature | This Service | Impact |
+|---|---|---|
+| OpenID Connect (OIDC) | Missing | Can't act as an IdP for other apps (no `/userinfo`, no discovery doc) |
+| Full OAuth2 Authorization Code Flow | Missing | `AuthorizationCode` entity exists but flow isn't wired |
+| Token introspection endpoint | Missing | Other services can't validate tokens against this server |
+| SAML 2.0 | Missing | No enterprise SSO |
+| MFA / TOTP | Missing | No 2FA |
+| LDAP / Active Directory | Missing | No enterprise directory sync |
+| Permission enforcement on endpoints | Missing | Permissions stored but guards don't check them yet |
+| Account lockout / brute-force | Missing | No failed login tracking |
+| Rate limiting | Missing | Auth endpoints unprotected |
+| Email verification on registration | Missing | Users unverified |
+| Single Sign-On (SSO) | Missing | No session federation across apps |
+| Multi-tenancy / Realms | Missing | Single-tenant only |
+| Admin UI | Missing | API only |
+| Token revocation endpoint | Missing | No `/revoke` per RFC 7009 |
+

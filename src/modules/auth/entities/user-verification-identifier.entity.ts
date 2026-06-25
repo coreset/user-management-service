@@ -20,11 +20,11 @@ export class UserVerificationIdentifier {
   @Column({ type: 'varchar', length: 10 })
   type: string; //'email' | 'code'; // Token type
 
-  @ManyToOne(() => User)
+  @ManyToOne(() => User, (user) => user.verificationIdentifiers, { onDelete: 'CASCADE' })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @ManyToOne(() => Client)
+  @ManyToOne(() => Client, (client) => client.verificationIdentifiers)
   @JoinColumn({ name: 'client_id' })
   client: Client;
 

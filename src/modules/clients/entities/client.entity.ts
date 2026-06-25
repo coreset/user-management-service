@@ -7,6 +7,8 @@ import {
 } from 'typeorm';
 import { AuthorizationCode } from '../../auth/entities/authorization-code.entity';
 import { AccessToken } from '../../auth/entities/access-token.entity';
+import { UserVerificationIdentifier } from '../../auth/entities/user-verification-identifier.entity';
+import { Role } from '../../roles/entities/role.entity';
 //import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 
 @Entity('clients')
@@ -37,6 +39,12 @@ export class Client {
 
   @OneToMany(() => AccessToken, (token) => token.client)
   accessTokens: AccessToken[];
+
+  @OneToMany(() => UserVerificationIdentifier, (v) => v.client)
+  verificationIdentifiers!: UserVerificationIdentifier[];
+
+  @OneToMany(() => Role, (role) => role.client)
+  roles!: Role[];
 
   //@OneToMany(() => RefreshToken, (token) => token.client)
   //refreshTokens: RefreshToken[];

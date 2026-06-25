@@ -12,6 +12,7 @@ import {
 import { AuthorizationCode } from '../../auth/entities/authorization-code.entity';
 import { AccessToken } from '../../auth/entities/access-token.entity';
 import { RefreshToken } from '../../auth/entities/refresh-token.entity';
+import { UserVerificationIdentifier } from '../../auth/entities/user-verification-identifier.entity';
 import * as bcrypt from 'bcrypt';
 import { Role } from 'src/modules/roles/entities/role.entity';
 import { Exclude } from 'class-transformer';
@@ -60,6 +61,9 @@ export class User {
 
   @OneToMany(() => RefreshToken, (token) => token.user)
   refreshTokens: RefreshToken[];
+
+  @OneToMany(() => UserVerificationIdentifier, (v) => v.user)
+  verificationIdentifiers!: UserVerificationIdentifier[];
 
   @BeforeInsert()
   async hashPassword() {

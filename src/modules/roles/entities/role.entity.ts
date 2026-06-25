@@ -29,7 +29,7 @@ export class Role {
   @Exclude()
   deletedAt: Date;
 
-  @ManyToOne(() => Client, (client) => client.id)
+  @ManyToOne(() => Client, (client) => client.roles)
   @JoinColumn({ name: 'client_id' })
   client: Client;
 
