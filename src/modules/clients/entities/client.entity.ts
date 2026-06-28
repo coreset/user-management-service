@@ -14,7 +14,7 @@ import { UserVerificationIdentifier } from '../../auth/entities/user-verificatio
 import { Realm } from '../../realms/entities/realm.entity';
 import { ClientRole } from './client-role.entity';
 import { UserClientRole } from './user-client-role.entity';
-//import { RefreshToken } from '../../auth/entities/refresh-token.entity';
+import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 
 @Entity('clients')
 @Unique(['realm', 'clientId'])
@@ -65,6 +65,6 @@ export class Client {
   @OneToMany(() => UserClientRole, (ucr) => ucr.client)
   userClientRoles!: UserClientRole[];
 
-  //@OneToMany(() => RefreshToken, (token) => token.client)
-  //refreshTokens: RefreshToken[];
+  @OneToMany(() => RefreshToken, (token) => token.client)
+  refreshTokens!: RefreshToken[];
 }

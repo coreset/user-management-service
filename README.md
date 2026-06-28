@@ -89,3 +89,20 @@ authority to create and manage other realms.
 > Note: tokens are currently signed as JWTs (HS256). Per-realm RS256 signing and
 > an OIDC/JWKS endpoint are planned (see "What's Missing vs. Keycloak" above), at
 > which point realms verify tokens against their own published keys.
+
+
+### Why we don't have relasionship between USERS-CLIENTS ?
+users are realm-scoped, not client-scoped. A realm has one shared pool of users, and all clients in that realm authenticate against that same pool. That's what enables SSO.
+
+### Is the realm-role vs client-role distinction necessary? — Yes
+They model genuinely different scopes:
+
+| Aspect | Realm role (ROLES) | Client role (CLIENT_ROLES) |
+|---|---|---|
+| Scope | Global to the realm; shared by all clients | Namespaced to ONE client (application) |
+| Owner | `realm_id` | `client_id` (within a realm) |
+| Uniqueness | unique per realm | unique per client |
+| Example | `SUPER_ADMIN`, `REALM_ADMIN` | `pawn-backend`: teller, manager; `accounting-app`: auditor |
+| Lifecycle | lives as long as the realm | deleted when its client is deleted |
+
+
