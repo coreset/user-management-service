@@ -11,6 +11,9 @@ import { RolesModule } from './modules/roles/roles.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { PermissionModule } from './modules/permission/permission.module';
 import { RealmsModule } from './modules/realms/realms.module';
+import { SettingsModule } from './modules/settings/settings.module';
+import { UserAttributesModule } from './modules/user-attributes/user-attributes.module';
+import { AuditModule } from './common/audit/audit.module';
 
 @Module({
   imports: [
@@ -68,6 +71,9 @@ import { RealmsModule } from './modules/realms/realms.module';
     RolesModule,
     ClientsModule,
     PermissionModule,
+    SettingsModule,
+    UserAttributesModule,
+    AuditModule,
   ],
   controllers: [AppController],
   providers: [AppService],

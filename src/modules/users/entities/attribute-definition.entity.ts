@@ -32,7 +32,7 @@ export class AttributeDefinition {
   @Column({ name: 'default_value', type: 'text', nullable: true })
   defaultValue: string | null;
 
-  @Column({ name: 'validation', nullable: true })
+  @Column({ name: 'validation', type: 'varchar', nullable: true })
   validation: string | null;
 
   @Column({ name: 'description', type: 'text', nullable: true })

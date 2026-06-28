@@ -3,8 +3,10 @@ import {
   PrimaryGeneratedColumn,
   Column,
   ManyToOne,
+  ManyToMany,
   OneToMany,
   JoinColumn,
+  JoinTable,
   DeleteDateColumn,
   CreateDateColumn,
   Unique,
@@ -13,7 +15,10 @@ import { Exclude } from 'class-transformer';
 import { Realm } from '../../realms/entities/realm.entity';
 import { Client } from './client.entity';
 import { UserClientRole } from './user-client-role.entity';
+import { Permission } from '../../permission/entities/permission.entity';
+import { Audited } from '../../../common/audit/audited.decorator';
 
+@Audited()
 @Entity('client_roles')
 @Unique(['client', 'name'])
 export class ClientRole {
@@ -43,4 +48,10 @@ export class ClientRole {
 
   @OneToMany(() => UserClientRole, (ucr) => ucr.clientRole)
   userClientRoles: UserClientRole[];
+
+  @ManyToMany(() => Permission, { cascade: true })
+  @JoinTable({
+    name: 'client_role_permissions',
+  })
+  permissions: Permission[];
 }

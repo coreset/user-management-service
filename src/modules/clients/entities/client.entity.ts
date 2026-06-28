@@ -14,8 +14,10 @@ import { UserVerificationIdentifier } from '../../auth/entities/user-verificatio
 import { Realm } from '../../realms/entities/realm.entity';
 import { ClientRole } from './client-role.entity';
 import { UserClientRole } from './user-client-role.entity';
+import { Audited } from '../../../common/audit/audited.decorator';
 import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 
+@Audited()
 @Entity('clients')
 @Unique(['realm', 'clientId'])
 export class Client {

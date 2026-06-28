@@ -10,7 +10,7 @@ import { User } from '../../users/entities/user.entity';
 import { Client } from './client.entity';
 import { ClientRole } from './client-role.entity';
 
-@Entity('user_client_role')
+@Entity('user_client_roles')
 @Unique(['user', 'clientRole'])
 export class UserClientRole {
   @PrimaryGeneratedColumn('uuid')

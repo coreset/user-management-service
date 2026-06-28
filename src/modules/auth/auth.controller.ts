@@ -37,8 +37,11 @@ export class AuthController {
   @UseGuards(AuthGuard('local')) //  verifies email + password at login; does not issue the token.
   @ApiBody({ type: LocalLoginDto }) // without dto in the request show parameters in the swagger
   @Post('login')
-  login(@Req() req) {
-    const token = this.authService.login(req.user.id);
+  login(@Req() req: Request) {
+    const token = this.authService.login(req.user!.id, {
+      ip: req.ip,
+      userAgent: req.get('user-agent') ?? undefined,
+    });
     //return {id: req.user.id, token};
     return token;
   }

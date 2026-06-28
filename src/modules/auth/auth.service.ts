@@ -17,11 +17,25 @@ import { randomBytes } from 'crypto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RefreshToken } from './entities/refresh-token.entity';
 import { UserVerificationIdentifier } from './entities/user-verification-identifier.entity';
+import { UserSession } from './entities/user-session.entity';
 import { MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { parseExpiry } from 'src/common/utils/time.util';
 import { CurrentUser } from './types/current-user';
 import { CreateUserDto } from '../users/dto/create-user.dto';
 import { RealmsService } from '../realms/realms.service';
+import { PasswordHistory } from '../users/entities/password-history.entity';
+import { User } from '../users/entities/user.entity';
+import { AuditService } from '../../common/audit/audit.service';
+
+/** How many previous passwords to block from reuse. */
+const PASSWORD_HISTORY_COUNT = 5;
+
+/** Optional context captured at login for the session record. */
+export type LoginContext = {
+  ip?: string;
+  userAgent?: string;
+  rememberMe?: boolean;
+};
 
 
 enum NotifyType {
@@ -37,17 +51,31 @@ export class AuthService {
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
     private readonly realmsService: RealmsService,
+    private readonly auditService: AuditService,
     @InjectRepository(RefreshToken) private RefreshTokenRepo: Repository<RefreshToken>,
     @InjectRepository(UserVerificationIdentifier) private UserVerificationIdentifierRepo: Repository<UserVerificationIdentifier>,
+    @InjectRepository(UserSession) private userSessionRepo: Repository<UserSession>,
+    @InjectRepository(PasswordHistory) private passwordHistoryRepo: Repository<PasswordHistory>,
   ) {}
 
   async validateUser(email: string, password: string) {
     const user = await this.userService.findByEmail(email);
     if (!user) {
+      await this.auditService.recordAuthEvent({
+        action: 'USER_LOGIN_FAILED',
+        status: 'FAILURE',
+        actorUsername: email,
+      });
       throw new UnauthorizedException('Invalid email or password');
     }
     const isPasswordMatch = await compare(password, user.passwordHash);
     if (!isPasswordMatch) {
+      await this.auditService.recordAuthEvent({
+        action: 'USER_LOGIN_FAILED',
+        status: 'FAILURE',
+        actorId: user.id,
+        actorUsername: email,
+      });
       throw new UnauthorizedException('Invalid email or password');
     }
     return user;
@@ -104,7 +132,7 @@ export class AuthService {
    *     this service and is also stored argon2-hashed in the DB, so asymmetric
    *     signing would add nothing here.
    */
-  async login(userId: string) {
+  async login(userId: string, context?: LoginContext) {
     // load the user (with its realm) so the token carries the realm claim
     const user = await this.userService.findById(userId);
     if (!user) throw new NotFoundException('User not found');
@@ -139,6 +167,31 @@ export class AuthService {
       expiresAt: new Date(Date.now() + parseExpiry(refreshExpiresIn)),
     });
     await this.RefreshTokenRepo.save(refreshTokenObject);
+
+    // ----- Record the SSO (user) session -------------------------------------
+    await this.userSessionRepo.save(
+      this.userSessionRepo.create({
+        user,
+        realm: user.realm,
+        ipAddress: context?.ip ?? null,
+        userAgent: context?.userAgent ?? null,
+        rememberMe: context?.rememberMe ?? false,
+        isActive: true,
+        lastSeenAt: new Date(),
+        expiresAt: new Date(Date.now() + parseExpiry(refreshExpiresIn)),
+      }),
+    );
+
+    // ----- Audit: successful login -------------------------------------------
+    await this.auditService.recordAuthEvent({
+      action: 'USER_LOGIN',
+      status: 'SUCCESS',
+      actorId: userId,
+      actorUsername: user.username,
+      realmId: user.realm?.id,
+      ipAddress: context?.ip ?? null,
+      userAgent: context?.userAgent ?? null,
+    });
 
     // return values to clients.
     return {
@@ -187,9 +240,18 @@ export class AuthService {
     // Generate new access and refresh tokens
     const secret = this.configService.get<string>('REFRESH_JWT_SECRET', '');
     const expiresIn = this.configService.get<string>('REFRESH_JWT_EXPIRE_IN', '');
-    const payload: AuthJwtPayload = { sub: userId, realm: user.realm?.realmName };
+    const realmName = user.realm?.realmName;
+    if (!realmName) throw new NotFoundException('User is not attached to a realm');
+    const payload: AuthJwtPayload = { sub: userId, realm: realmName };
 
-    const newAccessToken = this.jwtService.sign(payload);
+    // Access token must be RS256 (realm key) to match the jwt-rs256 guard.
+    const signingKey = await this.realmsService.getActiveSigningKey(realmName);
+    const newAccessToken = this.jwtService.sign(payload, {
+      privateKey: signingKey.privateKey,
+      algorithm: 'RS256',
+      keyid: signingKey.kid,
+      expiresIn: this.configService.get<string>('JWT_EXPIRE_IN', '1d'),
+    });
     const newRefreshToken = this.jwtService.sign(payload, { secret, expiresIn });
 
     // Hash and save new refresh token
@@ -261,6 +323,11 @@ export class AuthService {
       const isMatch = await argon2.verify(tokenEntry.token, refreshToken);
       if (isMatch) {
         await this.RefreshTokenRepo.delete({ token: tokenEntry.token });
+        await this.auditService.recordAuthEvent({
+          action: 'USER_LOGOUT',
+          status: 'SUCCESS',
+          actorId: userId,
+        });
         return;
       }
     }
@@ -269,6 +336,16 @@ export class AuthService {
 
   async signOutAllDevices(userId: string): Promise<void> {
     await this.RefreshTokenRepo.delete({ user: { id: userId } });
+    // Revoke active SSO sessions too (full sign-out across devices).
+    await this.userSessionRepo.update(
+      { user: { id: userId }, isActive: true },
+      { isActive: false },
+    );
+    await this.auditService.recordAuthEvent({
+      action: 'USER_LOGOUT_ALL',
+      status: 'SUCCESS',
+      actorId: userId,
+    });
   }
 
   async validateUserRole(userId: string): Promise<CurrentUser> {
@@ -298,11 +375,52 @@ export class AuthService {
     if (!isPasswordMatch) {
       throw new BadRequestException('Old password is incorrect.');
     }
+
+    // enforce "no reuse of recent passwords"
+    if (await this.isPasswordReused(userId, newPassword, user.passwordHash)) {
+      throw new BadRequestException('You cannot reuse a recent password.');
+    }
+
+    // archive the CURRENT hash into history before overwriting it
+    await this.passwordHistoryRepo.save(
+      this.passwordHistoryRepo.create({
+        user: { id: userId } as User,
+        passwordHash: user.passwordHash,
+      }),
+    );
+
     // hash new password
     const hashedPassword = await hash(newPassword, 10);
     await this.userService.updatePasswordById(userId, hashedPassword);
 
+    await this.auditService.recordAuthEvent({
+      action: 'PASSWORD_CHANGE',
+      status: 'SUCCESS',
+      actorId: userId,
+      actorUsername: user.username,
+      realmId: user.realm?.id,
+    });
+
     return { message: 'Password updated successfully' };
+  }
+
+  /** True if newPassword matches the current hash or any of the last N history hashes. */
+  private async isPasswordReused(
+    userId: string,
+    newPassword: string,
+    currentHash: string,
+  ): Promise<boolean> {
+    if (await compare(newPassword, currentHash)) return true;
+
+    const recent = await this.passwordHistoryRepo.find({
+      where: { user: { id: userId } },
+      order: { createdAt: 'DESC' },
+      take: PASSWORD_HISTORY_COUNT,
+    });
+    for (const entry of recent) {
+      if (await compare(newPassword, entry.passwordHash)) return true;
+    }
+    return false;
   }
 
   async forgotPassword(email: string, type: NotifyType) {

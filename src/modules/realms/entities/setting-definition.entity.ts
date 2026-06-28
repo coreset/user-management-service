@@ -32,7 +32,7 @@ export class SettingDefinition {
   @Column({ name: 'description', type: 'text', nullable: true })
   description: string | null;
 
-  @Column({ name: 'validation', nullable: true })
+  @Column({ name: 'validation', type: 'varchar', nullable: true })
   validation: string | null;
 
   @CreateDateColumn({ name: 'created_at' })

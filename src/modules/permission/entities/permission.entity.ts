@@ -7,7 +7,9 @@ import {
 } from 'typeorm';
 import { Role } from 'src/modules/roles/entities/role.entity';
 import { Exclude } from 'class-transformer';
+import { Audited } from '../../../common/audit/audited.decorator';
 
+@Audited()
 @Entity('permissions')
 export class Permission {
   @PrimaryGeneratedColumn('uuid')

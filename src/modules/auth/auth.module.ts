@@ -13,7 +13,10 @@ import { TypeOrmModule } from '@nestjs/typeorm';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { UserVerificationIdentifier } from './entities/user-verification-identifier.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { UserSession } from './entities/user-session.entity';
+import { PasswordHistory } from '../users/entities/password-history.entity';
 import { RealmsModule } from '../realms/realms.module';
+import { AuditModule } from '../../common/audit/audit.module';
 
 @Module({
   imports: [
@@ -26,8 +29,14 @@ import { RealmsModule } from '../realms/realms.module';
         signOptions: { expiresIn: configService.get<string>('JWT_EXPIRE_IN') },
       }),
     }),
-    TypeOrmModule.forFeature([RefreshToken, UserVerificationIdentifier]),
+    TypeOrmModule.forFeature([
+      RefreshToken,
+      UserVerificationIdentifier,
+      UserSession,
+      PasswordHistory,
+    ]),
     RealmsModule, // provides RealmsService for RS256 signing + key lookup
+    AuditModule, // provides AuditService for auth-event logging
   ],
   controllers: [AuthController],
   providers: [

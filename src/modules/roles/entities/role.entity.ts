@@ -14,8 +14,10 @@ import { Realm } from 'src/modules/realms/entities/realm.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Permission } from 'src/modules/permission/entities/permission.entity';
 import { Exclude } from 'class-transformer';
+import { Audited } from '../../../common/audit/audited.decorator';
 
-@Entity('roles')
+@Audited()
+@Entity('realm_roles')
 @Unique(['realm', 'name'])
 export class Role {
   @PrimaryGeneratedColumn('uuid')
@@ -34,13 +36,13 @@ export class Role {
 
   @ManyToMany(() => Permission, (permission) => permission.roles, { cascade: true })
   @JoinTable({
-    name: 'role_permissions',
+    name: 'realm_role_permissions',
   })
   permissions: Permission[];
 
   @ManyToMany(() => User, (user) => user.roles)
   @JoinTable({
-    name: 'user_roles',
+    name: 'user_realm_roles',
   })
   users: User[];
 }

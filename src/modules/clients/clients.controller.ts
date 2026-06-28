@@ -18,6 +18,7 @@ import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { CreateClientRoleDto } from './dto/create-client-role.dto';
 import { AssignClientRoleDto } from './dto/assign-client-role.dto';
+import { AssignPermissionsDto } from './dto/assign-permissions.dto';
 import { RolesGuard } from '../roles/guards/roles/roles.guard';
 import { FixedUserRole } from '../roles/enums/role.enum';
 import { AuthRequest } from '../auth/types/request';
@@ -107,6 +108,51 @@ export class ClientsController {
     return this.clientsService.unassignClientRoleFromUser(
       dto.userId,
       dto.clientRoleId,
+    );
+  }
+
+  // ----- Client role <-> permission assignment ------------------------------
+
+  @Post(':id/roles/:clientRoleId/permissions')
+  addClientRolePermissions(
+    @Req() req: AuthRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('clientRoleId', ParseUUIDPipe) clientRoleId: string,
+    @Body() dto: AssignPermissionsDto,
+  ) {
+    return this.clientsService.addPermissionsToClientRole(
+      req.user.realmId!,
+      id,
+      clientRoleId,
+      dto.permissionIds,
+    );
+  }
+
+  @Get(':id/roles/:clientRoleId/permissions')
+  listClientRolePermissions(
+    @Req() req: AuthRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('clientRoleId', ParseUUIDPipe) clientRoleId: string,
+  ) {
+    return this.clientsService.listClientRolePermissions(
+      req.user.realmId!,
+      id,
+      clientRoleId,
+    );
+  }
+
+  @Delete(':id/roles/:clientRoleId/permissions/:permissionId')
+  removeClientRolePermission(
+    @Req() req: AuthRequest,
+    @Param('id', ParseUUIDPipe) id: string,
+    @Param('clientRoleId', ParseUUIDPipe) clientRoleId: string,
+    @Param('permissionId', ParseUUIDPipe) permissionId: string,
+  ) {
+    return this.clientsService.removePermissionFromClientRole(
+      req.user.realmId!,
+      id,
+      clientRoleId,
+      permissionId,
     );
   }
 }

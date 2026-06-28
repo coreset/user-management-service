@@ -106,3 +106,9 @@ They model genuinely different scopes:
 | Lifecycle | lives as long as the realm | deleted when its client is deleted |
 
 
+### Why not all audit listening by subcription.
+| Aspect | DATA events | AUTH events |
+|---|---|---|
+| What | a row was inserted/updated/deleted | something happened (login, logout, failed login) |
+| Written by | the subscriber (automatic) | manual `recordAuthEvent()` in `auth.service` |
+| category column | `'DATA'` | `'AUTH'` |

@@ -3,6 +3,7 @@ import {
   PrimaryGeneratedColumn,
   Column,
   CreateDateColumn,
+  UpdateDateColumn,
   OneToMany,
   BeforeInsert,
   ManyToMany,
@@ -19,7 +20,9 @@ import * as bcrypt from 'bcrypt';
 import { Role } from 'src/modules/roles/entities/role.entity';
 import { Realm } from 'src/modules/realms/entities/realm.entity';
 import { Exclude } from 'class-transformer';
+import { Audited } from '../../../common/audit/audited.decorator';
 
+@Audited()
 @Entity('users')
 @Unique(['realm', 'username'])
 export class User {
@@ -36,9 +39,18 @@ export class User {
   @Column({ unique: true, name: 'email' })
   email: string;
 
+  @Column({ name: 'is_email_verified', default: false })
+  isEmailVerified: boolean;
+
   @Column({ name: 'password_hash' })
   @Exclude() // This hides the field from response
   passwordHash!: string;
+
+  @Column({ name: 'phone_number', type: 'varchar', nullable: true })
+  phoneNumber: string | null;
+
+  @Column({ name: 'is_phone_verified', default: false })
+  isPhoneVerified: boolean;
 
   @Column({ length: 100, name: 'first_name' })
   firstName: string;
@@ -53,6 +65,18 @@ export class User {
   @Column({ default: true, name: 'is_active' })
   isActive!: boolean;
 
+  @Column({ name: 'failed_login_attempts', default: 0 })
+  failedLoginAttempts: number;
+
+  @Column({ name: 'locked_until', type: 'timestamp', nullable: true })
+  lockedUntil: Date | null;
+
+  @Column({ name: 'last_login_at', type: 'timestamp', nullable: true })
+  lastLoginAt: Date | null;
+
+  @Column({ name: 'last_login_ip', type: 'varchar', length: 64, nullable: true })
+  lastLoginIp: string | null;
+
   @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt?: Date;
 
@@ -66,6 +90,9 @@ export class User {
 
   @CreateDateColumn({ name: 'created_at'})
   createdAt: Date;
+
+  @UpdateDateColumn({ name: 'updated_at' })
+  updatedAt: Date;
 
   @OneToMany(() => AuthorizationCode, (code) => code.user)
   authorizationCodes: AuthorizationCode[];

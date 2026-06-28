@@ -10,7 +10,9 @@ import { RealmKey } from './realm-key.entity';
 import { User } from '../../users/entities/user.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { Role } from '../../roles/entities/role.entity';
+import { Audited } from '../../../common/audit/audited.decorator';
 
+@Audited()
 @Entity('realms')
 export class Realm {
   @PrimaryGeneratedColumn('uuid')

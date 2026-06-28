@@ -19,6 +19,37 @@ entity REALMS {
   updated_at : TIMESTAMP
 }
 
+' Per-realm configuration as key-value pairs (Keycloak REALM_ATTRIBUTE style).
+' is_encrypted flags secret values (e.g. SMTP password); value_type drives casting.
+entity REALM_SETTINGS {
+  * id : UUID <<PK>>
+  --
+  setting_key : STRING ' must exist in SETTING_DEFINITIONS (validated in code)
+  setting_value : TEXT
+  value_type : STRING ' string | int | boolean | json (copied from definition)
+  is_encrypted : BOOLEAN
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+  --
+  # realm_id : UUID <<FK>>
+  ' <<UNIQUE (realm_id, setting_key)>>
+}
+
+' Metadata catalog of valid REALM_SETTINGS keys (allow-list; seeded from code).
+' Standalone reference table — no FK; the app validates keys against it.
+entity SETTING_DEFINITIONS {
+  * id : UUID <<PK>>
+  --
+  setting_key : STRING <<UNIQUE>>
+  value_type : STRING ' string | int | boolean | json
+  default_value : TEXT <<nullable>>
+  is_encrypted : BOOLEAN
+  description : TEXT <<nullable>>
+  validation : STRING <<nullable>>
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
 ' Per-realm RSA key pair used to sign (RS256) and verify the realm's JWTs.
 ' private_key is never exposed via the API; public_key is published via JWKS.
 entity REALM_KEYS {
@@ -42,20 +73,60 @@ entity USERS {
   --
   username : STRING ' <<UNIQUE per realm>>
   email : STRING <<UNIQUE>>
+  is_email_verified : BOOLEAN
   password_hash : STRING ' bcrypt; hashed on @BeforeInsert
+  phone_number : STRING <<nullable>>
+  is_phone_verified : BOOLEAN
   first_name : STRING
   last_name : STRING
   avatar_url : STRING <<nullable>>
   is_active : BOOLEAN
+  failed_login_attempts : INTEGER
+  locked_until : TIMESTAMP <<nullable>>
+  last_login_at : TIMESTAMP <<nullable>>
+  last_login_ip : INET <<nullable>>
   deleted_at : TIMESTAMP <<nullable>>
   created_at : TIMESTAMP
+  updated_at : TIMESTAMP
   --
   # realm_id : UUID <<FK>>
   ' <<UNIQUE (realm_id, username)>>
 }
 
+' Open key-value custom attributes for a user (e.g. department, employee_id).
+' is_encrypted flags secret values; value_type drives casting/validation.
+entity USER_ATTRIBUTES {
+  * id : UUID <<PK>>
+  --
+  attribute_key : STRING ' must exist in ATTRIBUTE_DEFINITIONS (validated in code)
+  attribute_value : TEXT
+  attribute_type : STRING ' string | int | boolean | json (copied from definition)
+  is_encrypted : BOOLEAN ' copied from definition
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+  --
+  # user_id : UUID <<FK>>
+  ' <<UNIQUE (user_id, attribute_key)>>
+}
+
+' Metadata catalog of valid USER_ATTRIBUTES keys (allow-list; seeded).
+' Standalone reference table — no FK; the app validates keys against it.
+entity ATTRIBUTE_DEFINITIONS {
+  * id : UUID <<PK>>
+  --
+  attribute_key : STRING <<UNIQUE>>
+  value_type : STRING ' string | int | boolean | json | date
+  is_required : BOOLEAN
+  is_encrypted : BOOLEAN
+  default_value : TEXT <<nullable>>
+  validation : STRING <<nullable>>
+  description : TEXT <<nullable>>
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
 ' Realm roles (e.g. SUPER_ADMIN, REALM_ADMIN). Scoped to a realm.
-entity ROLES {
+entity REALM_ROLES {
   * id : UUID <<PK>>
   --
   name : STRING ' <<UNIQUE per realm>>
@@ -72,15 +143,21 @@ entity PERMISSIONS {
   deleted_at : TIMESTAMP <<nullable>>
 }
 
-' join table: USERS <-> ROLES (many-to-many)
-entity USER_ROLES {
+' join table: USERS <-> REALM_ROLES (many-to-many)
+entity USER_REALM_ROLES {
   * # user_id : UUID <<FK, PK>>
   * # role_id : UUID <<FK, PK>>
 }
 
-' join table: ROLES <-> PERMISSIONS (many-to-many)
-entity ROLE_PERMISSIONS {
+' join table: REALM_ROLES <-> PERMISSIONS (many-to-many)
+entity REALM_ROLE_PERMISSIONS {
   * # role_id : UUID <<FK, PK>>
+  * # permission_id : UUID <<FK, PK>>
+}
+
+' join table: CLIENT_ROLES <-> PERMISSIONS (many-to-many)
+entity CLIENT_ROLE_PERMISSIONS {
+  * # client_role_id : UUID <<FK, PK>>
   * # permission_id : UUID <<FK, PK>>
 }
 
@@ -101,7 +178,7 @@ entity CLIENTS {
   ' <<UNIQUE (realm_id, client_id)>>
 }
 
-' Client-specific roles, defined per client (vs. realm-wide ROLES).
+' Client-specific roles, defined per client (vs. realm-wide REALM_ROLES).
 entity CLIENT_ROLES {
   * id : UUID <<PK>>
   --
@@ -116,7 +193,7 @@ entity CLIENT_ROLES {
 }
 
 ' Assignment of a client role to a user.
-entity USER_CLIENT_ROLE {
+entity USER_CLIENT_ROLES {
   * id : UUID <<PK>>
   --
   created_at : TIMESTAMP
@@ -155,6 +232,8 @@ entity REFRESH_TOKENS {
   created_at : TIMESTAMP
   --
   # user_id : UUID <<FK>>
+  # client_id : UUID <<FK, nullable>>
+  # client_session_id : UUID <<FK, nullable>>
 }
 
 ' One-time identifiers for password reset / verification (URL token or code).
@@ -171,29 +250,109 @@ entity USER_VERIFICATION_IDENTIFIERS {
   # client_id : UUID <<FK>>
 }
 
+' Previous password hashes — enforces "no reuse of the last N passwords".
+' On each password change the old hash is appended; new passwords are compared
+' against recent rows. expires_at (optional) = when reuse becomes allowed again.
+entity PASSWORD_HISTORY {
+  * id : UUID <<PK>>
+  --
+  password_hash : TEXT
+  created_at : TIMESTAMP
+  expires_at : TIMESTAMP <<nullable>>
+  --
+  # user_id : UUID <<FK>>
+  ' INDEX (user_id, created_at) — fast "most recent N" lookups
+}
+
+' Realm-level SSO session — one row per user login. Enables single sign-on
+' across all clients in the realm and drives idle/max-lifetime timeouts.
+entity USER_SESSIONS {
+  * id : UUID <<PK>>
+  --
+  ip_address : STRING <<nullable>>
+  user_agent : STRING <<nullable>> ' browser / device
+  remember_me : BOOLEAN
+  is_active : BOOLEAN ' false once logged out / revoked
+  created_at : TIMESTAMP ' login time
+  last_seen_at : TIMESTAMP ' idle-timeout tracking
+  expires_at : TIMESTAMP ' max session lifetime
+  --
+  # user_id : UUID <<FK>>
+  # realm_id : UUID <<FK>>
+}
+
+' Per-client sub-session within a user session. One is created for each client
+' the user accesses during the SSO session; refresh tokens map to it.
+entity CLIENT_SESSIONS {
+  * id : UUID <<PK>>
+  --
+  started_at : TIMESTAMP
+  last_seen_at : TIMESTAMP
+  --
+  # user_session_id : UUID <<FK>>
+  # client_id : UUID <<FK>>
+}
+
+' Append-only, hash-chained audit trail (DATA changes + AUTH events).
+' actor/realm are denormalized snapshots (no FK) so the trail survives user/realm
+' changes. Never UPDATE/DELETE a row — prev_hash -> row_hash detects tampering.
+entity AUDIT_LOG {
+  * id : UUID <<PK>>
+  --
+  category : STRING ' DATA | AUTH
+  action : STRING ' INSERT/UPDATE/DELETE | USER_LOGIN | PASSWORD_CHANGE ...
+  table_name : STRING <<nullable>>
+  record_id : STRING <<nullable>>
+  old_values : JSON <<nullable>>
+  new_values : JSON <<nullable>>
+  changed_fields : JSON <<nullable>>
+  status : STRING <<nullable>> ' SUCCESS | FAILURE (auth events)
+  ip_address : STRING <<nullable>>
+  user_agent : TEXT <<nullable>>
+  realm_id : STRING <<nullable>> ' snapshot, not a FK
+  actor_id : STRING <<nullable>> ' snapshot, not a FK
+  actor_username : STRING <<nullable>>
+  prev_hash : STRING <<nullable>>
+  row_hash : STRING ' sha256(prev_hash + canonical(payload))
+  created_at : TIMESTAMP
+}
+
 ' ---- Relationships ---------------------------------------------------------
 
 REALMS ||--o{ REALM_KEYS : "signs with"
+REALMS ||--o{ REALM_SETTINGS : "configured by"
 REALMS ||--o{ USERS : "contains"
-REALMS ||--o{ ROLES : "defines"
+REALMS ||--o{ REALM_ROLES : "defines"
 REALMS ||--o{ CLIENTS : "registers"
 REALMS ||--o{ CLIENT_ROLES : "scopes"
 
-USERS ||--o{ USER_ROLES : ""
-ROLES ||--o{ USER_ROLES : ""
-ROLES ||--o{ ROLE_PERMISSIONS : ""
-PERMISSIONS ||--o{ ROLE_PERMISSIONS : ""
+USERS ||--o{ USER_ATTRIBUTES : "has"
+USERS ||--o{ PASSWORD_HISTORY : "has"
+
+USERS ||--o{ USER_REALM_ROLES : ""
+REALM_ROLES ||--o{ USER_REALM_ROLES : ""
+REALM_ROLES ||--o{ REALM_ROLE_PERMISSIONS : ""
+PERMISSIONS ||--o{ REALM_ROLE_PERMISSIONS : ""
+CLIENT_ROLES ||--o{ CLIENT_ROLE_PERMISSIONS : ""
+PERMISSIONS ||--o{ CLIENT_ROLE_PERMISSIONS : ""
 
 CLIENTS ||--o{ CLIENT_ROLES : "has a"
-CLIENTS ||--o{ USER_CLIENT_ROLE : "grants"
-CLIENT_ROLES ||--o{ USER_CLIENT_ROLE : "assigned via"
-USERS ||--o{ USER_CLIENT_ROLE : "assigned"
+CLIENTS ||--o{ USER_CLIENT_ROLES : "grants"
+CLIENT_ROLES ||--o{ USER_CLIENT_ROLES : "assigned via"
+USERS ||--o{ USER_CLIENT_ROLES : "assigned"
 
 USERS ||--o{ ACCESS_TOKENS : "has a"
 CLIENTS ||--o{ ACCESS_TOKENS : "issued to"
 USERS ||--o{ AUTHORIZATION_CODES : "has a"
 CLIENTS ||--o{ AUTHORIZATION_CODES : "issued to"
 USERS ||--o{ REFRESH_TOKENS : "has a"
+CLIENTS ||--o{ REFRESH_TOKENS : "issued to"
+
+USERS ||--o{ USER_SESSIONS : "logs in via"
+REALMS ||--o{ USER_SESSIONS : "scopes"
+USER_SESSIONS ||--o{ CLIENT_SESSIONS : "spawns"
+CLIENTS ||--o{ CLIENT_SESSIONS : "accessed via"
+CLIENT_SESSIONS ||--o{ REFRESH_TOKENS : "issues"
 USERS ||--o{ USER_VERIFICATION_IDENTIFIERS : "has a"
 CLIENTS ||--o{ USER_VERIFICATION_IDENTIFIERS : "scoped to"
 

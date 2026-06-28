@@ -5,9 +5,12 @@ import { ClientsController } from './clients.controller';
 import { Client } from './entities/client.entity';
 import { ClientRole } from './entities/client-role.entity';
 import { UserClientRole } from './entities/user-client-role.entity';
+import { Permission } from '../permission/entities/permission.entity';
 
 @Module({
-  imports: [TypeOrmModule.forFeature([Client, ClientRole, UserClientRole])],
+  imports: [
+    TypeOrmModule.forFeature([Client, ClientRole, UserClientRole, Permission]),
+  ],
   controllers: [ClientsController],
   providers: [ClientsService],
   exports: [ClientsService],
