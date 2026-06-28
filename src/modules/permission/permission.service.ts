@@ -64,19 +64,19 @@ export class PermissionService {
     });
   }
 
-  findOne(id: number) {
+  findOne(id: string) {
     return `This action returns a #${id} permission`;
   }
 
-  update(id: number, updatePermissionDto: UpdatePermissionDto) {
+  update(id: string, updatePermissionDto: UpdatePermissionDto) {
     return `This action updates a #${id} permission`;
   }
 
-  remove(id: number) {
+  remove(id: string) {
     return `This action removes a #${id} permission`;
   }
-   
-  findByIdList(idList: number[]): Promise<any> {
+
+  findByIdList(idList: string[]): Promise<any> {
     return this.PermissionRepo.find({
       where: {id : In(idList)}
     });

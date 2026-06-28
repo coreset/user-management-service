@@ -7,7 +7,7 @@ import {
   Put,
   Param,
   Delete,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Query,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
@@ -38,13 +38,13 @@ export class UsersController {
   }
 
   @Get(':id')
-  findOne(@Param('id', ParseIntPipe) id: number) {
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.findOne(id);
   }
 
   @Put(':id')
   update(
-    @Param('id', ParseIntPipe) id: number,
+    @Param('id', ParseUUIDPipe) id: string,
     @Body() updateUserDto: UpdateUserDto,
   ) {
     return this.usersService.update(id, updateUserDto);
@@ -56,12 +56,12 @@ export class UsersController {
   //}
 
   @Delete(':id')
-  remove(@Param('id', ParseIntPipe) id: number) {
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.remove(id);
   }
 
   @Post(':id/restore')
-  restore(@Param('id', ParseIntPipe) id: number) {
+  restore(@Param('id', ParseUUIDPipe) id: string) {
     return this.usersService.restore(id);
   }
 }

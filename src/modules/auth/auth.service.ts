@@ -21,6 +21,7 @@ import { MoreThan, MoreThanOrEqual, Repository } from 'typeorm';
 import { parseExpiry } from 'src/common/utils/time.util';
 import { CurrentUser } from './types/current-user';
 import { CreateUserDto } from '../users/dto/create-user.dto';
+import { RealmsService } from '../realms/realms.service';
 
 
 enum NotifyType {
@@ -35,6 +36,7 @@ export class AuthService {
     private readonly userService: UsersService,
     private readonly jwtService: JwtService,
     private readonly configService: ConfigService,
+    private readonly realmsService: RealmsService,
     @InjectRepository(RefreshToken) private RefreshTokenRepo: Repository<RefreshToken>,
     @InjectRepository(UserVerificationIdentifier) private UserVerificationIdentifierRepo: Repository<UserVerificationIdentifier>,
   ) {}
@@ -44,34 +46,97 @@ export class AuthService {
     if (!user) {
       throw new UnauthorizedException('Invalid email or password');
     }
-    const isPasswordMatch = await compare(password, user.password);
+    const isPasswordMatch = await compare(password, user.passwordHash);
     if (!isPasswordMatch) {
       throw new UnauthorizedException('Invalid email or password');
     }
     return user;
   }
 
-  async login(userId: number) {
-    const secret = this.configService.get<string>('REFRESH_JWT_SECRET', '');
-    const expiresIn = this.configService.get<string>('REFRESH_JWT_EXPIRE_IN', '');
-    const payload: AuthJwtPayload = { sub: userId };
+  /*
+   * ---------------------------------------------------------------------------
+   * OLD login() — HS256 for BOTH tokens (kept for reference).
+   * Signed the access token with the single global JWT_SECRET (HS256), so other
+   * services could only verify it by sharing that secret. Replaced by the RS256
+   * version below, which signs the access token with the realm's own private key
+   * so external services can verify via the public key / JWKS.
+   * ---------------------------------------------------------------------------
+   *
+   * async login(userId: string) {
+   *   const secret = this.configService.get<string>('REFRESH_JWT_SECRET', '');
+   *   const expiresIn = this.configService.get<string>('REFRESH_JWT_EXPIRE_IN', '');
+   *
+   *   // load the user (with its realm) so the token carries the realm claim
+   *   const user = await this.userService.findById(userId);
+   *   if (!user) throw new NotFoundException('User not found');
+   *
+   *   const payload: AuthJwtPayload = { sub: userId, realm: user.realm?.realmName };
+   *
+   *   // generate access token and refresh token
+   *   const token = this.jwtService.sign(payload);
+   *   const refreshToken = this.jwtService.sign(payload, {
+   *     secret,
+   *     expiresIn,
+   *   });
+   *
+   *   const hashedRefreshToken = await argon2.hash(refreshToken);
+   *   const refreshTokenObject = this.RefreshTokenRepo.create({
+   *     token: hashedRefreshToken,
+   *     user: user,
+   *     expiresAt: new Date(Date.now() + parseExpiry(expiresIn)),
+   *   });
+   *   await this.RefreshTokenRepo.save(refreshTokenObject);
+   *
+   *   // return values to clients.
+   *   return {
+   *     id: userId,
+   *     token,
+   *     refreshToken,
+   *   };
+   * }
+   */
 
-    // generate access token and refresh token
-    const token = this.jwtService.sign(payload);
-    const refreshToken = this.jwtService.sign(payload, {
-      secret,
-      expiresIn,
-    });
-
-    // hash the refresh token and save it on the 'refresh_tokens' table
+  /**
+   * NEW login() — Option B (hybrid signing):
+   *   - ACCESS token  → RS256, signed with the user's realm private key (+ kid).
+   *     Verifiable by other services via the realm public key / JWKS.
+   *   - REFRESH token → HS256, signed with REFRESH_JWT_SECRET. It never leaves
+   *     this service and is also stored argon2-hashed in the DB, so asymmetric
+   *     signing would add nothing here.
+   */
+  async login(userId: string) {
+    // load the user (with its realm) so the token carries the realm claim
     const user = await this.userService.findById(userId);
     if (!user) throw new NotFoundException('User not found');
+
+    const realmName = user.realm?.realmName;
+    if (!realmName) throw new NotFoundException('User is not attached to a realm');
+
+    const payload: AuthJwtPayload = { sub: userId, realm: realmName };
+
+    // ----- Access token: RS256 with the realm's active private key -----------
+    const signingKey = await this.realmsService.getActiveSigningKey(realmName);
+    const accessExpiresIn = this.configService.get<string>('JWT_EXPIRE_IN', '1d');
+    const token = this.jwtService.sign(payload, {
+      privateKey: signingKey.privateKey,
+      algorithm: 'RS256',
+      keyid: signingKey.kid, // stamps `kid` into the JWT header for verification
+      expiresIn: accessExpiresIn,
+    });
+
+    // ----- Refresh token: stays HS256 (internal-only, also DB-hashed) --------
+    const refreshSecret = this.configService.get<string>('REFRESH_JWT_SECRET', '');
+    const refreshExpiresIn = this.configService.get<string>('REFRESH_JWT_EXPIRE_IN', '');
+    const refreshToken = this.jwtService.sign(payload, {
+      secret: refreshSecret,
+      expiresIn: refreshExpiresIn,
+    });
 
     const hashedRefreshToken = await argon2.hash(refreshToken);
     const refreshTokenObject = this.RefreshTokenRepo.create({
       token: hashedRefreshToken,
       user: user,
-      expiresAt: new Date(Date.now() + parseExpiry(expiresIn)),
+      expiresAt: new Date(Date.now() + parseExpiry(refreshExpiresIn)),
     });
     await this.RefreshTokenRepo.save(refreshTokenObject);
 
@@ -93,7 +158,7 @@ export class AuthService {
   //  };
   //}
 
-  async refreshToken(userId: number, oldRefreshToken: string) {
+  async refreshToken(userId: string, oldRefreshToken: string) {
     const user = await this.userService.findById(userId);
     if (!user) throw new NotFoundException('User not found');
 
@@ -122,7 +187,7 @@ export class AuthService {
     // Generate new access and refresh tokens
     const secret = this.configService.get<string>('REFRESH_JWT_SECRET', '');
     const expiresIn = this.configService.get<string>('REFRESH_JWT_EXPIRE_IN', '');
-    const payload: AuthJwtPayload = { sub: userId };
+    const payload: AuthJwtPayload = { sub: userId, realm: user.realm?.realmName };
 
     const newAccessToken = this.jwtService.sign(payload);
     const newRefreshToken = this.jwtService.sign(payload, { secret, expiresIn });
@@ -144,7 +209,7 @@ export class AuthService {
     };
   }
 
-  async validateRefreshToken(userId: number, refreshToken: string) {
+  async validateRefreshToken(userId: string, refreshToken: string) {
     const user = await this.userService.findById(userId);
     if (!user) throw new UnauthorizedException('Invalid Refresh Token');
 
@@ -168,25 +233,25 @@ export class AuthService {
     return 'This action adds a new auth';
   }
 
-  findAll(userId: number) {
+  findAll(userId: string) {
     return {
       id: userId,
     };
   }
 
-  findOne(id: number) {
+  findOne(id: string) {
     return this.userService.findOne(id);
   }
 
-  update(id: number, updateAuthDto: UpdateAuthDto) {
+  update(id: string, updateAuthDto: UpdateAuthDto) {
     return `This action updates a #${id} auth`;
   }
 
-  remove(id: number) {
+  remove(id: string) {
     return `This action removes a #${id} auth`;
   }
 
-  async signOutCurrentDevice(userId: number, refreshToken: string): Promise<void> {
+  async signOutCurrentDevice(userId: string, refreshToken: string): Promise<void> {
     const tokens = await this.RefreshTokenRepo.find({
       where: { user: { id: userId } },
     });
@@ -202,15 +267,16 @@ export class AuthService {
     throw new ForbiddenException('Refresh token not found or already invalidated');
   }
 
-  async signOutAllDevices(userId: number): Promise<void> {
+  async signOutAllDevices(userId: string): Promise<void> {
     await this.RefreshTokenRepo.delete({ user: { id: userId } });
   }
 
-  async validateUserRole(userId: number): Promise<CurrentUser> {
+  async validateUserRole(userId: string): Promise<CurrentUser> {
     const user = await this.userService.findById(userId);
     if (!user) throw new UnauthorizedException('User not found!');
     const currentUser: CurrentUser = {
       id: user.id,
+      realmId: user.realm?.id,
       roles: user.roles,
     };
     return currentUser;
@@ -222,12 +288,12 @@ export class AuthService {
     return await this.userService.create(googleUser);
   }
 
-  async changePassword(userId: number, oldPassword: string, newPassword: string) {
+  async changePassword(userId: string, oldPassword: string, newPassword: string) {
     // find the user
     const user = await this.userService.findById(userId);
     if (!user) throw new UnauthorizedException('User not found!');
     // compare the old password with the password in DB
-    const isPasswordMatch = await compare(oldPassword, user.password);
+    const isPasswordMatch = await compare(oldPassword, user.passwordHash);
     // change user's password with HASH
     if (!isPasswordMatch) {
       throw new BadRequestException('Old password is incorrect.');
@@ -298,12 +364,12 @@ export class AuthService {
     return { message: 'if this user exits, they will receive an email' };
   }
 
-  async verifyIdentifier(secret: string, user: number | string) {
-    let userId: number;
+  async verifyIdentifier(secret: string, user: string) {
+    let userId: string;
     let type: NotifyType;
 
-    if (typeof user === 'string' && isNaN(Number(user))) {
-      // Type: email
+    if (user.includes('@')) {
+      // Type: email (code flow)
       const userEntity = await this.userService.findByEmail(user);
       if (!userEntity) {
         throw new UnauthorizedException('Invalid user');
@@ -311,11 +377,11 @@ export class AuthService {
       userId = userEntity.id;
       type = NotifyType.CODE;
     } else {
-      // Type: code
-      userId = Number(user);
-      if (isNaN(userId)) {
+      // Type: user id (reset-link/URL flow)
+      if (!user) {
         throw new UnauthorizedException('Invalid user identifier');
       }
+      userId = user;
       type = NotifyType.URL;
     }
 

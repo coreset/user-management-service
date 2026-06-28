@@ -1,6 +1,7 @@
 import { Role } from 'src/modules/roles/entities/role.entity';
 
 export type CurrentUser = {
-  id: number;
+  id: string;
+  realmId?: string;
   roles: Array<Role>;
 };

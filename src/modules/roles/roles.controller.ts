@@ -9,7 +9,7 @@ import {
   UseGuards,
   Req,
   SetMetadata,
-  ParseIntPipe,
+  ParseUUIDPipe,
   Query,
 } from '@nestjs/common';
 import { RolesService } from './roles.service';
@@ -18,8 +18,8 @@ import { UpdateRoleDto } from './dto/update-role.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { RolesGuard } from './guards/roles/roles.guard';
-import { FixedUserRole, UserRole } from './enums/role.enum';
-import { Request } from 'express';
+import { FixedUserRole } from './enums/role.enum';
+import { AuthRequest } from '../auth/types/request';
 import { PaginateRoleDto } from './dto/paginate-role.dto';
 import { SearchRoleDto } from './dto/search-role.dto';
 import { AssignUsersDto } from './dto/asign-users.dto';
@@ -31,9 +31,11 @@ export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @Post()
-  //@UseGuards(AuthGuard('jwt'))
-  create(@Body() createRoleDto: CreateRoleDto) {
-    return this.rolesService.create(createRoleDto);
+  @SetMetadata('role', [FixedUserRole.SUPER_ADMIN, FixedUserRole.REALM_ADMIN])
+  @UseGuards(AuthGuard('jwt-rs256'), RolesGuard)
+  create(@Req() req: AuthRequest, @Body() createRoleDto: CreateRoleDto) {
+    // Realm roles are scoped to the caller's realm.
+    return this.rolesService.create(createRoleDto, req.user.realmId);
   }
 
   @Get()
@@ -49,31 +51,31 @@ export class RolesController {
   }
 
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.rolesService.findOne(+id);
+  findOne(@Param('id', ParseUUIDPipe) id: string) {
+    return this.rolesService.findOne(id);
   }
 
   @Patch(':id')
-  update(@Param('id') id: string, @Body() updateRoleDto: UpdateRoleDto) {
-    return this.rolesService.update(+id, updateRoleDto);
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateRoleDto: UpdateRoleDto) {
+    return this.rolesService.update(id, updateRoleDto);
   }
 
   //@SetMetadata('role', [FixedUserRole.ADMIN])
   //@UseGuards(RolesGuard)
   //@UseGuards(AuthGuard('jwt'))
   @Delete(':id')
-  softDelete(@Param('id', ParseIntPipe) id: number, @Req() req) {
+  softDelete(@Param('id', ParseUUIDPipe) id: string) {
     return this.rolesService.softDelete(id);
   }
 
   @Post(':id/restore')
-  restore(@Param('id', ParseIntPipe) id: number) {
+  restore(@Param('id', ParseUUIDPipe) id: string) {
     return this.rolesService.restore(id);
   }
 
   @Post(':roleId/assign-users')
   assignUsersToRole(
-    @Param('roleId', ParseIntPipe) roleId: number,
+    @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() assignUsersDto: AssignUsersDto,
   ) {
     return this.rolesService.assignUsersToRole(roleId, assignUsersDto.userIdList);
@@ -81,7 +83,7 @@ export class RolesController {
 
   @Post(':roleId/unassign-users')
   unassignUsersToRole(
-    @Param('roleId', ParseIntPipe) roleId: number,
+    @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() assignUsersDto: AssignUsersDto,
   ) {
     return this.rolesService.unassignUsersFromRole(roleId, assignUsersDto.userIdList);
@@ -89,7 +91,7 @@ export class RolesController {
 
   @Post(':roleId/assign-permissions')
   assignPermissionsToRole(
-    @Param('roleId', ParseIntPipe) roleId: number,
+    @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() assignPermissionsDto: AssignPermissionsDto,
   ) {
     return this.rolesService.assignPermissionsToRole(roleId, assignPermissionsDto.permissionIdList);
@@ -97,7 +99,7 @@ export class RolesController {
 
   @Post(':roleId/unassign-permissions')
   unassignPermissionsToRole(
-    @Param('roleId', ParseIntPipe) roleId: number,
+    @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() assignPermissionsDto: AssignPermissionsDto,
   ) {
     return this.rolesService.unassignPermissionsFromRole(roleId, assignPermissionsDto.permissionIdList);

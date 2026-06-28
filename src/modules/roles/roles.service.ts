@@ -9,6 +9,7 @@ import { UsersService } from '../users/users.service';
 import { User } from '../users/entities/user.entity';
 import { PermissionService } from '../permission/permission.service';
 import { Permission } from '../permission/entities/permission.entity';
+import { Realm } from '../realms/entities/realm.entity';
 
 @Injectable()
 export class RolesService {
@@ -36,35 +37,44 @@ export class RolesService {
   //  }
   //}
 
-  async create(createRoleDto: CreateRoleDto): Promise<Role | null> {
+  async create(
+    createRoleDto: CreateRoleDto,
+    realmId?: string,
+  ): Promise<Role | null> {
     try {
       const existing = await this.RoleRepo.findOne({
-        where: { name: createRoleDto.name },
+        where: {
+          name: createRoleDto.name,
+          ...(realmId ? { realm: { id: realmId } } : {}),
+        },
         withDeleted: true, // so we also check soft-deleted ones
       });
 
       if (existing) {
         if (existing.deletedAt) {
-          this.logger.warn(`Restoring soft-deleted user: ${createRoleDto.name}`, RolesService.name);
+          this.logger.warn(`Restoring soft-deleted role: ${createRoleDto.name}`, RolesService.name);
           // Restore the soft-deleted record
           await this.RoleRepo.restore(existing.id);
 
           // Optionally update other fields
           const updated = this.RoleRepo.merge(existing, createRoleDto);
-          const restoredUser = await this.RoleRepo.save(updated);
-          this.logger.log(`Role restored successfully: ${restoredUser.id}`, RolesService.name);
-          return restoredUser;
+          const restoredRole = await this.RoleRepo.save(updated);
+          this.logger.log(`Role restored successfully: ${restoredRole.id}`, RolesService.name);
+          return restoredRole;
         } else {
-          this.logger.warn(`Attepmt to create dublicate user: ${createRoleDto.name}`, RolesService.name);
-          throw new ConflictException(`User with this name ${createRoleDto.name} already exists`);
+          this.logger.warn(`Attempt to create duplicate role: ${createRoleDto.name}`, RolesService.name);
+          throw new ConflictException(`Role with this name ${createRoleDto.name} already exists`);
         }
       }
 
       // No conflict, proceed to create new
-      const newUser = this.RoleRepo.create(createRoleDto);
-      const savedUser = await this.RoleRepo.save(newUser);
-      this.logger.log(`Role saved successfully: ${savedUser.id}`, RolesService.name);
-      return savedUser;
+      const newRole = this.RoleRepo.create({
+        name: createRoleDto.name,
+        realm: realmId ? ({ id: realmId } as Realm) : undefined,
+      });
+      const savedRole = await this.RoleRepo.save(newRole);
+      this.logger.log(`Role saved successfully: ${savedRole.id}`, RolesService.name);
+      return savedRole;
     } catch (error) {
       // You can add custom error handling here
       this.logger.error(`Failed to create role: ${error.message}`, RolesService.name);
@@ -129,11 +139,11 @@ export class RolesService {
 
   }
 
-  findOne(id: number) {
+  findOne(id: string) {
     return `This action returns a #${id} role`;
   }
 
-  update(id: number, updateRoleDto: UpdateRoleDto) {
+  update(id: string, updateRoleDto: UpdateRoleDto) {
     return `This action updates a #${id} role`;
   }
 
@@ -145,7 +155,7 @@ export class RolesService {
   //  }
   //}
 
-  async softDelete(id: number): Promise<void> {
+  async softDelete(id: string): Promise<void> {
     const role = await this.RoleRepo.findOne({
       where: { id },
       withDeleted: true,
@@ -176,7 +186,7 @@ export class RolesService {
   //  }
   //}
 
-  async restore(id: number): Promise<void> {
+  async restore(id: string): Promise<void> {
     const role = await this.RoleRepo.findOne({
       where: { id },
       withDeleted: true,
@@ -199,13 +209,13 @@ export class RolesService {
     this.logger.log(`Role with id ${id} successfully restored`, RolesService.name);
   }
 
-  findByIdList(idList: number[]): Promise<any> {
+  findByIdList(idList: string[]): Promise<any> {
     return this.RoleRepo.find({
       where: {id : In(idList)}
     });
   }
 
-  async assignUsersToRole(roleId: number, userIdList: number[]) {
+  async assignUsersToRole(roleId: string, userIdList: string[]) {
     const role: Role = (await this.RoleRepo.findOne({
       where: { id: roleId },
       relations: ['users'],
@@ -221,7 +231,7 @@ export class RolesService {
 
     const usersToAdd: User[] = await this.usersService.findByIdList(userIdList);
 
-    const foundIds: number[] = usersToAdd.map((u) => u.id);
+    const foundIds: string[] = usersToAdd.map((u) => u.id);
     const missingIds = userIdList.filter((id) => !foundIds.includes(id));
 
     if (missingIds.length > 0) {
@@ -248,7 +258,7 @@ export class RolesService {
     };
   }
 
-  async assignPermissionsToRole(roleId: number, permissionIdList: number[]) {
+  async assignPermissionsToRole(roleId: string, permissionIdList: string[]) {
     const role: Role = (await this.RoleRepo.findOne({
       where: { id: roleId },
       relations: ['permissions'],
@@ -264,7 +274,7 @@ export class RolesService {
 
     const permissionsToAdd: Permission[] = await this.permissionService.findByIdList(permissionIdList);
 
-    const foundIds: number[] = permissionsToAdd.map((u) => u.id);
+    const foundIds: string[] = permissionsToAdd.map((u) => u.id);
     const missingIds = permissionIdList.filter((id) => !foundIds.includes(id));
 
     if (missingIds.length > 0) {
@@ -291,7 +301,7 @@ export class RolesService {
     };
   }
 
-  async unassignUsersFromRole(roleId: number, userIdList: number[]) {
+  async unassignUsersFromRole(roleId: string, userIdList: string[]) {
     const role: Role = (await this.RoleRepo.findOne({
       where: { id: roleId },
       relations: ['users'],
@@ -307,7 +317,7 @@ export class RolesService {
 
     const usersToRemove: User[] = await this.usersService.findByIdList(userIdList);
 
-    const foundIds: number[] = usersToRemove.map((u) => u.id);
+    const foundIds: string[] = usersToRemove.map((u) => u.id);
     const missingIds = userIdList.filter((id) => !foundIds.includes(id));
 
     if (missingIds.length > 0) {
@@ -337,7 +347,7 @@ export class RolesService {
     };
   }
 
-  async unassignPermissionsFromRole(roleId: number, permissionIdList: number[]) {
+  async unassignPermissionsFromRole(roleId: string, permissionIdList: string[]) {
     const role: Role = (await this.RoleRepo.findOne({
       where: { id: roleId },
       relations: ['permissions'],
@@ -351,9 +361,9 @@ export class RolesService {
       throw new NotFoundException(`Role with id ${roleId} not found`);
     }
 
-    const permissionsToRemove: User[] = await this.permissionService.findByIdList(permissionIdList);
+    const permissionsToRemove: Permission[] = await this.permissionService.findByIdList(permissionIdList);
 
-    const foundIds: number[] = permissionsToRemove.map((u) => u.id);
+    const foundIds: string[] = permissionsToRemove.map((u) => u.id);
     const missingIds = permissionIdList.filter((id) => !foundIds.includes(id));
 
     if (missingIds.length > 0) {

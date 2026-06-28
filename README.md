@@ -66,3 +66,26 @@ This application inclided following 4 modules
 | Admin UI | Missing | API only |
 | Token revocation endpoint | Missing | No `/revoke` per RFC 7009 |
 
+
+
+### Why does the super admin live in a `master` realm?
+
+The super admin manages every realm, so they don't *belong* to any tenant realm.
+One option is to make them a special "realm-less" global user. But that means
+treating the platform administrator as a separate case throughout the system:
+
+- A separate login path (realm-less vs. realm-scoped)
+- A separate way to issue and validate their tokens
+- A separate role/permission model for global vs. realm roles
+- More branching and more code to maintain
+
+Instead — following Keycloak's model — we provide a built-in `master` realm and
+place the super admin inside it. Every account, including the platform
+administrator, then authenticates the same way and flows through the same realm,
+user, role, and JWT machinery. There is no special case: the only difference is
+that the super admin holds the `SUPER_ADMIN` realm role, which grants the
+authority to create and manage other realms.
+
+> Note: tokens are currently signed as JWTs (HS256). Per-realm RS256 signing and
+> an OIDC/JWKS endpoint are planned (see "What's Missing vs. Keycloak" above), at
+> which point realms verify tokens against their own published keys.

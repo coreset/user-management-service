@@ -1,3 +1,9 @@
+/**
+ * Google OAuth 2.0 strategy ('google') — sign-in via Google.
+ * Used by /auth/google/login and /auth/google/callback. After Google
+ * authenticates the user, validate() provisions the user if new
+ * (validateGoogleUser) and returns them with roles for token issuance.
+ */
 import { PassportStrategy } from '@nestjs/passport';
 import { Injectable } from '@nestjs/common';
 import { Strategy, VerifyCallback } from 'passport-google-oauth20';

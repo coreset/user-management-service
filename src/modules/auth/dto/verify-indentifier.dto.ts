@@ -1,6 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString, IsNumber, ValidateIf } from 'class-validator';
-import { Type } from 'class-transformer';
+import { IsString } from 'class-validator';
 
 export class VerifyIdentifierDto {
   @ApiProperty({
@@ -12,13 +11,11 @@ export class VerifyIdentifierDto {
   token: string; // token or code
 
   @ApiProperty({
-    name: 'userId',
+    name: 'user',
     required: true,
-    example: 1,
+    description: 'User id (uuid) or email',
+    example: 'user@example.com',
   })
-  @ValidateIf((o) => typeof o.user === 'string')
   @IsString()
-  @ValidateIf((o) => typeof o.user === 'number')
-  @IsNumber()
-  user: number | string;
+  user: string; // user id (uuid) or email
 }

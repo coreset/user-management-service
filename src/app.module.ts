@@ -10,6 +10,7 @@ import { AuthModule } from './modules/auth/auth.module';
 import { RolesModule } from './modules/roles/roles.module';
 import { ClientsModule } from './modules/clients/clients.module';
 import { PermissionModule } from './modules/permission/permission.module';
+import { RealmsModule } from './modules/realms/realms.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { PermissionModule } from './modules/permission/permission.module';
       inject: [ConfigService],
     }),
     LoggerModule,
+    RealmsModule,
     UsersModule,
     AuthModule,
     RolesModule,

@@ -34,7 +34,7 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('local'))
+  @UseGuards(AuthGuard('local')) //  verifies email + password at login; does not issue the token.
   @ApiBody({ type: LocalLoginDto }) // without dto in the request show parameters in the swagger
   @Post('login')
   login(@Req() req) {
@@ -50,14 +50,14 @@ export class AuthController {
 
   @SetMetadata('role', [FixedUserRole.ADMIN])
   @UseGuards(RolesGuard)
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt-rs256')) // authorizes every protected request from the RS256 Bearer access token
   @Get()
   findAll(@Req() req: Request) {
     return this.authService.findAll(req.user.id);
   }
 
   @UseGuards(AuthGuard('refresh-jwt'))
-  @Post('refresh')
+  @Post('refresh') // validates the refresh token against the hashed DB copy.
   refreshToken(@Req() req: Request) {
     const token: string = req.get('authorization')!.replace('Bearer', '').trim();
     return this.authService.refreshToken(req.user.id, token);
@@ -65,18 +65,18 @@ export class AuthController {
 
   @Get(':id')
   findOne(@Param('id') id: string) {
-    return this.authService.findOne(+id);
+    return this.authService.findOne(id);
   }
 
   @Patch(':id')
   update(@Param('id') id: string, @Body() updateAuthDto: UpdateAuthDto) {
-    return this.authService.update(+id, updateAuthDto);
+    return this.authService.update(id, updateAuthDto);
   }
 
   @SetMetadata('role', [FixedUserRole.ADMIN]) // only ADMIN can delete user
   @Delete(':id')
   remove(@Param('id') id: string) {
-    return this.authService.remove(+id);
+    return this.authService.remove(id);
   }
 
   @UseGuards(AuthGuard('refresh-jwt'))
@@ -95,22 +95,44 @@ export class AuthController {
   }
 
   // GOOGLE AUTH 2 ***********************************************************
+  //
+  // The whole Google sign-in is a round-trip across the two routes below:
+  //
+  //   1. Frontend sends the browser to GET /auth/google/login
+  //        (full page navigation, e.g. window.location.href — NOT fetch/Axios).
+  //   2. AuthGuard('google') runs BEFORE the handler. Since there is no
+  //        ?code=... yet, Passport treats this as the "start": it builds the
+  //        Google consent URL (client_id, callbackURL, scope) and replies with
+  //        a 302 redirect. So the handler body never really runs — the guard
+  //        does the redirect for us.
+  //   3. Browser follows the 302 and shows Google's login/consent page.
+  //   4. After the user approves, Google redirects the browser back to our
+  //        callbackURL (/auth/google/callback) with a ?code=...
+  //   5. On the callback, AuthGuard('google') sees the code, exchanges it for
+  //        the user's Google profile, and calls GoogleStrategy.validate(),
+  //        which finds or creates the user and puts them on req.user.
+  //   6. Our callback handler then issues OUR own JWT and redirects the browser
+  //        back to the frontend with the tokens in the URL.
+
   @Get('google/login')
-  @UseGuards(AuthGuard('google'))
-  async googleAuth(@Req() req: Request) {
-    console.log(req.body);
-    // Redirects to Google login
+  @UseGuards(AuthGuard('google')) // starts the flow → guard redirects to Google
+  async googleAuth() {
+    // Intentionally empty: AuthGuard('google') already sent the 302 to Google,
+    // so nothing here needs to run.
   }
 
   @Get('google/callback')
-  @UseGuards(AuthGuard('google'))
-  async googleCallback(@Req() req: Request, @Res() res: Response) { // this is calling from google 
+  @UseGuards(AuthGuard('google')) // Google sends the user here with ?code=...
+  async googleCallback(@Req() req: Request, @Res() res: Response) {
+    // Guard has validated the Google user and set req.user (find-or-create).
+    // Now mint our own access + refresh tokens for that user...
     const response = await this.authService.login(req.user.id);
+    // ...and hand them to the frontend via the success URL.
     res.redirect(`http://localhost:4200/login-success?token=${response.token}&refreshToken=${response.refreshToken}`);
   }
 
   // change password **********************************************************
-  @UseGuards(AuthGuard('jwt'))
+  @UseGuards(AuthGuard('jwt-rs256'))
   @Put('change-password')
   async changePassword(
     @Body() changePasswordDto: ChangePasswordDto,

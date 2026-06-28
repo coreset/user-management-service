@@ -1,3 +1,4 @@
 export type AuthJwtPayload = {
-  sub: number;
+  sub: string;
+  realm?: string;
 };

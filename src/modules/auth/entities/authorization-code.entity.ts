@@ -12,7 +12,7 @@ export class AuthorizationCode {
   user: User;
 
   @ManyToOne(() => Client, (client) => client.authorizationCodes)
-  @JoinColumn({ name: 'client_id', referencedColumnName: 'client_id' })
+  @JoinColumn({ name: 'client_id', referencedColumnName: 'id' })
   client: Client;
 
   @Column({ type: 'text', name: 'redirect_uri' })

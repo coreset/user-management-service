@@ -1,7 +1,26 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, IsUrl, IsOptional } from 'class-validator';
+import { IsEmail, IsString, IsUrl, IsOptional, IsUUID } from 'class-validator';
 
 export class CreateUserDto {
+  @ApiProperty({
+    name: 'username',
+    required: false,
+    example: 'jdoe',
+    description: 'Unique within the realm; defaults to the email if omitted',
+  })
+  @IsOptional()
+  @IsString()
+  username?: string;
+
+  @ApiProperty({
+    name: 'realmId',
+    required: false,
+    description: 'Realm the user belongs to; defaults to caller context',
+  })
+  @IsOptional()
+  @IsUUID()
+  realmId?: string;
+
   @ApiProperty({
     name: 'firstName',
     required: true,

@@ -12,12 +12,12 @@ export class AccessToken {
   user: User;
 
   @ManyToOne(() => Client, (client) => client.accessTokens)
-  @JoinColumn({ name: 'client_id', referencedColumnName: 'client_id' })
+  @JoinColumn({ name: 'client_id', referencedColumnName: 'id' })
   client: Client;
 
-  @Column()
+  @Column({ name: 'scope' })
   scope: string;
 
-  @Column({ type: 'timestamp' })
-  expires_at: Date;
+  @Column({ type: 'timestamp', name: 'expires_at' })
+  expiresAt!: Date;
 }

@@ -11,13 +11,13 @@ import { Client } from '../../clients/entities/client.entity';
 
 @Entity('user_verification_identifiers')
 export class UserVerificationIdentifier {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
   @Column({ name: 'token' })
   token: string; // Hashed version only
 
-  @Column({ type: 'varchar', length: 10 })
+  @Column({ type: 'varchar', length: 10, name: 'type' })
   type: string; //'email' | 'code'; // Token type
 
   @ManyToOne(() => User, (user) => user.verificationIdentifiers, { onDelete: 'CASCADE' })
@@ -28,7 +28,7 @@ export class UserVerificationIdentifier {
   @JoinColumn({ name: 'client_id' })
   client: Client;
 
-  @Column({ type: 'timestamp' })
+  @Column({ type: 'timestamp', name: 'expires_at' })
   expiresAt: Date;
 
   // this field not use currenly

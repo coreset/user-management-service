@@ -1,3 +1,9 @@
+/**
+ * JWT strategy ('jwt') — authorizes every protected request.
+ * passport-jwt first verifies the Bearer token's signature (JWT_SECRET) and
+ * expiry; then validate() turns payload.sub back into a live CurrentUser with
+ * fresh roles from the DB. Used by @UseGuards(AuthGuard('jwt')).
+ */
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';

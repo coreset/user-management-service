@@ -7,31 +7,30 @@ import {
   JoinTable,
   PrimaryGeneratedColumn,
   DeleteDateColumn,
+  Unique,
 } from 'typeorm';
-import { FixedUserRole, UserRole } from '../enums/role.enum';
-import { Client } from 'src/modules/clients/entities/client.entity';
+import { UserRole } from '../enums/role.enum';
+import { Realm } from 'src/modules/realms/entities/realm.entity';
 import { User } from 'src/modules/users/entities/user.entity';
 import { Permission } from 'src/modules/permission/entities/permission.entity';
 import { Exclude } from 'class-transformer';
 
 @Entity('roles')
+@Unique(['realm', 'name'])
 export class Role {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column({
-    type: 'varchar',
-    unique: true,
-  })
+  @Column({ type: 'varchar', name: 'name' })
   name: UserRole;
 
   @DeleteDateColumn({ name: 'deleted_at' })
   @Exclude()
   deletedAt: Date;
 
-  @ManyToOne(() => Client, (client) => client.roles)
-  @JoinColumn({ name: 'client_id' })
-  client: Client;
+  @ManyToOne(() => Realm, (realm) => realm.roles, { onDelete: 'CASCADE' })
+  @JoinColumn({ name: 'realm_id' })
+  realm!: Realm;
 
   @ManyToMany(() => Permission, (permission) => permission.roles, { cascade: true })
   @JoinTable({

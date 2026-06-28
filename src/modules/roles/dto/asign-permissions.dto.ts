@@ -6,9 +6,9 @@ export class AssignPermissionsDto {
     description: 'Array of permission IDs to assign to the role',
     name: 'permissionIdList',
     required: true,
-    type: [Number], // Indicates an array of numbers
-    example: [1, 2, 3],
+    type: [String], // Array of permission UUIDs
+    example: ['7c9e6679-7425-40de-944b-e07fc1f90ae7'],
   })
   @IsArray()
-  permissionIdList: number[];
+  permissionIdList: string[];
 }

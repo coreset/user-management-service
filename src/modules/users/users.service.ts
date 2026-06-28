@@ -9,7 +9,9 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
+import { Realm } from '../realms/entities/realm.entity';
 import { Repository, QueryFailedError, IsNull, In } from 'typeorm';
+import { randomBytes } from 'crypto';
 
 @Injectable()
 export class UsersService {
@@ -21,7 +23,19 @@ export class UsersService {
   //}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
-    const user = this.UserRepo.create(createUserDto);
+    const user = this.UserRepo.create({
+      username: createUserDto.username ?? createUserDto.email,
+      email: createUserDto.email,
+      firstName: createUserDto.firstName,
+      lastName: createUserDto.lastName,
+      avatarUrl: createUserDto.avatarUrl,
+      // @BeforeInsert hashes this value; fall back to a random secret
+      // (e.g. social logins that never set a password).
+      passwordHash: createUserDto.password ?? randomBytes(16).toString('hex'),
+      realm: createUserDto.realmId
+        ? ({ id: createUserDto.realmId } as Realm)
+        : undefined,
+    });
 
     try {
       const savedUser = await this.UserRepo.save(user);
@@ -45,14 +59,14 @@ export class UsersService {
     });
   }
 
-  findOne(id: number): Promise<User | null> {
+  findOne(id: string): Promise<User | null> {
     return this.UserRepo.findOne({
       where: { id },
       select: ['firstName', 'lastName', 'avatarUrl'],
     });
   }
 
-  findByIdList(idList: number[]): Promise<any> {
+  findByIdList(idList: string[]): Promise<any> {
     return this.UserRepo.find({
       where: {id : In(idList)}
     });
@@ -85,12 +99,15 @@ export class UsersService {
     }
   }
 
-  async findById(id: number): Promise<User | null> {
-    return this.UserRepo.findOne({ where: { id }, relations: ['roles'] });
+  async findById(id: string): Promise<User | null> {
+    return this.UserRepo.findOne({
+      where: { id },
+      relations: ['roles', 'realm'],
+    });
   }
 
-  updatePasswordById(userId: number, newHashedPassword: string): Promise<any> {
-    return this.UserRepo.update(userId, { password: newHashedPassword });
+  updatePasswordById(userId: string, newHashedPassword: string): Promise<any> {
+    return this.UserRepo.update(userId, { passwordHash: newHashedPassword });
   }
 
   async findByEmail(email: string): Promise<User | null> {
@@ -101,14 +118,14 @@ export class UsersService {
     return user;
   }
 
-  async restore(id: number) {
+  async restore(id: string) {
     const result = await this.UserRepo.restore(id);
     if (result.affected === 0) {
       throw new NotFoundException(`User with id ${id} not found or not deleted`);
     }
   }
 
-  async update(id: number, updateUserDto: UpdateUserDto) {
+  async update(id: string, updateUserDto: UpdateUserDto) {
     const user = await this.UserRepo.findOne({
       where: { id },
     });
@@ -119,7 +136,7 @@ export class UsersService {
     return this.UserRepo.save(user);
   }
 
-  remove(id: number) {
+  remove(id: string) {
     return `This action removes a #${id} user`;
   }
 }

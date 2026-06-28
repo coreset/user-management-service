@@ -10,10 +10,10 @@ import { Exclude } from 'class-transformer';
 
 @Entity('permissions')
 export class Permission {
-  @PrimaryGeneratedColumn()
-  id: number;
+  @PrimaryGeneratedColumn('uuid')
+  id: string;
 
-  @Column({ unique: true })
+  @Column({ unique: true, name: 'name' })
   name: string;
 
   @DeleteDateColumn({ name: 'deleted_at' })

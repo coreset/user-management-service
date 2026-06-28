@@ -7,11 +7,13 @@ import { LocalStrategy } from './strategies/local.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
+import { JwtRs256Strategy } from './strategies/jwt-rs256.strategy';
 import { RefreshJwtStrategy } from './strategies/refresh.strategy';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GoogleStrategy } from './strategies/google.strategy';
 import { UserVerificationIdentifier } from './entities/user-verification-identifier.entity';
 import { RefreshToken } from './entities/refresh-token.entity';
+import { RealmsModule } from '../realms/realms.module';
 
 @Module({
   imports: [
@@ -25,12 +27,14 @@ import { RefreshToken } from './entities/refresh-token.entity';
       }),
     }),
     TypeOrmModule.forFeature([RefreshToken, UserVerificationIdentifier]),
+    RealmsModule, // provides RealmsService for RS256 signing + key lookup
   ],
   controllers: [AuthController],
   providers: [
     AuthService,
     LocalStrategy,
     JwtStrategy,
+    JwtRs256Strategy,
     RefreshJwtStrategy,
     GoogleStrategy,
   ],

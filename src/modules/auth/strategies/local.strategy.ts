@@ -1,3 +1,9 @@
+/**
+ * Local strategy ('local') — verifies email + password at login.
+ * Runs once on POST /auth/login. Looks up the user and bcrypt-compares the
+ * password; on success attaches the user to req.user. Does NOT issue a token —
+ * the controller calls AuthService.login() afterwards to sign the JWT.
+ */
 import { Injectable } from '@nestjs/common';
 import { PassportStrategy } from '@nestjs/passport';
 import { Strategy } from 'passport-local';

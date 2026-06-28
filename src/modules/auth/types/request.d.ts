@@ -2,10 +2,11 @@ import { Request } from 'express';
 
 // Interface for the user object your auth system attaches
 export interface AuthUser {
-  id: number; // or number
+  id: string;
+  realmId?: string;
+  roles?: Array<{ name: string }>;
   // Add other properties your JWT/user object contains:
   // email?: string;
-  // roles?: string[];
 }
 
 // Extended Request type for authenticated routes
