@@ -20,11 +20,11 @@ export class CreateRealmDto {
   displayName?: string;
 
   @ApiProperty({
-    name: 'enabled',
+    name: 'isActive',
     required: false,
     example: true,
   })
   @IsOptional()
   @IsBoolean()
-  enabled?: boolean;
+  isActive?: boolean;
 }

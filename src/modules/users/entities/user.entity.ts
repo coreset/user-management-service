@@ -50,8 +50,8 @@ export class User {
   @Column({ nullable: true, name: 'avatar_url' })
   avatarUrl: string;
 
-  @Column({ default: true, name: 'enabled' })
-  enabled!: boolean;
+  @Column({ default: true, name: 'is_active' })
+  isActive!: boolean;
 
   @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt?: Date;

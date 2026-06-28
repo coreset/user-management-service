@@ -34,8 +34,8 @@ export class RealmKey {
   @Column({ name: 'public_key', type: 'text' })
   publicKey: string;
 
-  @Column({ default: true, name: 'active' })
-  active: boolean;
+  @Column({ default: true, name: 'is_active' })
+  isActive: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;

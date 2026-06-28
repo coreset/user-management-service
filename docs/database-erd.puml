@@ -1,0 +1,200 @@
+@startuml
+hide circle
+skinparam linetype ortho
+
+' ============================================================================
+' user-management-service — multi-realm (Keycloak-style) identity provider
+' Keep this diagram in sync with the *.entity.ts files (see CLAUDE.md).
+' ============================================================================
+
+' A tenant boundary. Every user, client, role and signing key belongs to a realm.
+' The seeded `master` realm hosts the super admin.
+entity REALMS {
+  * id : UUID <<PK>>
+  --
+  realm_name : STRING <<UNIQUE>>
+  display_name : STRING <<nullable>>
+  is_active : BOOLEAN
+  created_at : TIMESTAMP
+  updated_at : TIMESTAMP
+}
+
+' Per-realm RSA key pair used to sign (RS256) and verify the realm's JWTs.
+' private_key is never exposed via the API; public_key is published via JWKS.
+entity REALM_KEYS {
+  * id : UUID <<PK>>
+  --
+  kid : STRING
+  algorithm : STRING ' RS256
+  key_type : STRING ' RSA
+  private_key : TEXT
+  public_key : TEXT
+  is_active : BOOLEAN
+  created_at : TIMESTAMP
+  expires_at : TIMESTAMP <<nullable>>
+  --
+  # realm_id : UUID <<FK>>
+}
+
+' seeded: super admin user in the master realm
+entity USERS {
+  * id : UUID <<PK>>
+  --
+  username : STRING ' <<UNIQUE per realm>>
+  email : STRING <<UNIQUE>>
+  password_hash : STRING ' bcrypt; hashed on @BeforeInsert
+  first_name : STRING
+  last_name : STRING
+  avatar_url : STRING <<nullable>>
+  is_active : BOOLEAN
+  deleted_at : TIMESTAMP <<nullable>>
+  created_at : TIMESTAMP
+  --
+  # realm_id : UUID <<FK>>
+  ' <<UNIQUE (realm_id, username)>>
+}
+
+' Realm roles (e.g. SUPER_ADMIN, REALM_ADMIN). Scoped to a realm.
+entity ROLES {
+  * id : UUID <<PK>>
+  --
+  name : STRING ' <<UNIQUE per realm>>
+  deleted_at : TIMESTAMP <<nullable>>
+  --
+  # realm_id : UUID <<FK>>
+  ' <<UNIQUE (realm_id, name)>>
+}
+
+entity PERMISSIONS {
+  * id : UUID <<PK>>
+  --
+  name : STRING <<UNIQUE>>
+  deleted_at : TIMESTAMP <<nullable>>
+}
+
+' join table: USERS <-> ROLES (many-to-many)
+entity USER_ROLES {
+  * # user_id : UUID <<FK, PK>>
+  * # role_id : UUID <<FK, PK>>
+}
+
+' join table: ROLES <-> PERMISSIONS (many-to-many)
+entity ROLE_PERMISSIONS {
+  * # role_id : UUID <<FK, PK>>
+  * # permission_id : UUID <<FK, PK>>
+}
+
+' OAuth/OIDC client application registered within a realm.
+entity CLIENTS {
+  * id : UUID <<PK>>
+  --
+  name : STRING
+  client_id : STRING ' public OAuth identifier; <<UNIQUE per realm>>
+  client_secret : STRING <<nullable>> ' null for public clients
+  public_client : BOOLEAN
+  is_active : BOOLEAN
+  redirect_uris : TEXT
+  grant_types : TEXT
+  created_at : TIMESTAMP
+  --
+  # realm_id : UUID <<FK>>
+  ' <<UNIQUE (realm_id, client_id)>>
+}
+
+' Client-specific roles, defined per client (vs. realm-wide ROLES).
+entity CLIENT_ROLES {
+  * id : UUID <<PK>>
+  --
+  name : STRING ' <<UNIQUE per client>>
+  description : STRING <<nullable>>
+  deleted_at : TIMESTAMP <<nullable>>
+  created_at : TIMESTAMP
+  --
+  # realm_id : UUID <<FK>>
+  # client_id : UUID <<FK>>
+  ' <<UNIQUE (client_id, name)>>
+}
+
+' Assignment of a client role to a user.
+entity USER_CLIENT_ROLE {
+  * id : UUID <<PK>>
+  --
+  created_at : TIMESTAMP
+  --
+  # user_id : UUID <<FK>>
+  # client_id : UUID <<FK>>
+  # client_role_id : UUID <<FK>>
+  ' <<UNIQUE (user_id, client_role_id)>>
+}
+
+entity ACCESS_TOKENS {
+  * token : STRING <<PK>>
+  --
+  scope : STRING
+  expires_at : TIMESTAMP
+  --
+  # user_id : UUID <<FK>>
+  # client_id : UUID <<FK>>
+}
+
+entity AUTHORIZATION_CODES {
+  * code : STRING <<PK>>
+  --
+  redirect_uri : TEXT
+  expires_at : TIMESTAMP
+  --
+  # user_id : UUID <<FK>>
+  # client_id : UUID <<FK>>
+}
+
+' Refresh tokens are stored argon2-hashed; the `token` column holds the hash.
+entity REFRESH_TOKENS {
+  * token : STRING <<PK>>
+  --
+  expires_at : TIMESTAMP
+  created_at : TIMESTAMP
+  --
+  # user_id : UUID <<FK>>
+}
+
+' One-time identifiers for password reset / verification (URL token or code).
+entity USER_VERIFICATION_IDENTIFIERS {
+  * id : UUID <<PK>>
+  --
+  token : STRING ' hashed
+  type : STRING ' url | code
+  expires_at : TIMESTAMP
+  used : BOOLEAN
+  created_at : TIMESTAMP
+  --
+  # user_id : UUID <<FK>>
+  # client_id : UUID <<FK>>
+}
+
+' ---- Relationships ---------------------------------------------------------
+
+REALMS ||--o{ REALM_KEYS : "signs with"
+REALMS ||--o{ USERS : "contains"
+REALMS ||--o{ ROLES : "defines"
+REALMS ||--o{ CLIENTS : "registers"
+REALMS ||--o{ CLIENT_ROLES : "scopes"
+
+USERS ||--o{ USER_ROLES : ""
+ROLES ||--o{ USER_ROLES : ""
+ROLES ||--o{ ROLE_PERMISSIONS : ""
+PERMISSIONS ||--o{ ROLE_PERMISSIONS : ""
+
+CLIENTS ||--o{ CLIENT_ROLES : "has a"
+CLIENTS ||--o{ USER_CLIENT_ROLE : "grants"
+CLIENT_ROLES ||--o{ USER_CLIENT_ROLE : "assigned via"
+USERS ||--o{ USER_CLIENT_ROLE : "assigned"
+
+USERS ||--o{ ACCESS_TOKENS : "has a"
+CLIENTS ||--o{ ACCESS_TOKENS : "issued to"
+USERS ||--o{ AUTHORIZATION_CODES : "has a"
+CLIENTS ||--o{ AUTHORIZATION_CODES : "issued to"
+USERS ||--o{ REFRESH_TOKENS : "has a"
+USERS ||--o{ USER_VERIFICATION_IDENTIFIERS : "has a"
+CLIENTS ||--o{ USER_VERIFICATION_IDENTIFIERS : "scoped to"
+
+@enduml

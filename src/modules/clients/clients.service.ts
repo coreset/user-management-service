@@ -51,7 +51,7 @@ export class ClientsService {
       publicClient: isPublic,
       redirectUris: dto.redirectUris ?? '',
       grantTypes: dto.grantTypes ?? '',
-      enabled: dto.enabled ?? true,
+      isActive: dto.isActive ?? true,
     });
 
     const saved = await this.clientRepo.save(client);
@@ -88,7 +88,7 @@ export class ClientsService {
       publicClient: dto.publicClient ?? client.publicClient,
       redirectUris: dto.redirectUris ?? client.redirectUris,
       grantTypes: dto.grantTypes ?? client.grantTypes,
-      enabled: dto.enabled ?? client.enabled,
+      isActive: dto.isActive ?? client.isActive,
     });
     return this.clientRepo.save(client);
   }

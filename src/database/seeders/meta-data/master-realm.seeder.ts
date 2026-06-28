@@ -31,7 +31,7 @@ export class MasterRealmSeeder implements Seeder {
         realmRepo.create({
           realmName: masterRealmName,
           displayName: 'Master',
-          enabled: true,
+          isActive: true,
         }),
       );
 
@@ -44,7 +44,7 @@ export class MasterRealmSeeder implements Seeder {
           keyType: key.keyType,
           publicKey: key.publicKey,
           privateKey: key.privateKey,
-          active: true,
+          isActive: true,
         }),
       );
       console.log(`Master realm '${masterRealmName}' created with signing key`);
@@ -82,7 +82,7 @@ export class MasterRealmSeeder implements Seeder {
           passwordHash: superAdminPassword,
           firstName: 'Super',
           lastName: 'Admin',
-          enabled: true,
+          isActive: true,
           realm: masterRealm,
           roles: [superAdminRole],
         }),

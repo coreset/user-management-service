@@ -38,8 +38,8 @@ export class Client {
   @Column({ name: 'public_client', default: false })
   publicClient!: boolean;
 
-  @Column({ name: 'enabled', default: true })
-  enabled!: boolean;
+  @Column({ name: 'is_active', default: true })
+  isActive!: boolean;
 
   @Column({ type: 'text', name: 'redirect_uris' })
   redirectUris!: string; // comma-separated or JSON string

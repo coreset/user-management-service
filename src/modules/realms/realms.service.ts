@@ -37,7 +37,7 @@ export class RealmsService {
       this.realmRepo.create({
         realmName: createRealmDto.realmName,
         displayName: createRealmDto.displayName ?? createRealmDto.realmName,
-        enabled: createRealmDto.enabled ?? true,
+        isActive: createRealmDto.isActive ?? true,
       }),
     );
 
@@ -63,7 +63,7 @@ export class RealmsService {
         keyType: generated.keyType,
         publicKey: generated.publicKey,
         privateKey: generated.privateKey,
-        active: true,
+        isActive: true,
       }),
     );
   }
@@ -77,7 +77,7 @@ export class RealmsService {
     realmName: string,
   ): Promise<{ kid: string; privateKey: string }> {
     const key = await this.realmKeyRepo.findOne({
-      where: { active: true, algorithm: 'RS256', realm: { realmName } },
+      where: { isActive: true, algorithm: 'RS256', realm: { realmName } },
       relations: ['realm'],
       order: { createdAt: 'DESC' },
     });
@@ -114,7 +114,7 @@ export class RealmsService {
    */
   async getJwks(realmName: string): Promise<{ keys: Record<string, unknown>[] }> {
     const keys = await this.realmKeyRepo.find({
-      where: { active: true, algorithm: 'RS256', realm: { realmName } },
+      where: { isActive: true, algorithm: 'RS256', realm: { realmName } },
       relations: ['realm'],
     });
 
@@ -149,7 +149,7 @@ export class RealmsService {
     Object.assign(realm, {
       realmName: updateRealmDto.realmName ?? realm.realmName,
       displayName: updateRealmDto.displayName ?? realm.displayName,
-      enabled: updateRealmDto.enabled ?? realm.enabled,
+      isActive: updateRealmDto.isActive ?? realm.isActive,
     });
     return this.realmRepo.save(realm);
   }

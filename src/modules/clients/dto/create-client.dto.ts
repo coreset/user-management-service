@@ -38,8 +38,8 @@ export class CreateClientDto {
   @IsString()
   grantTypes?: string;
 
-  @ApiProperty({ name: 'enabled', required: false, example: true })
+  @ApiProperty({ name: 'isActive', required: false, example: true })
   @IsOptional()
   @IsBoolean()
-  enabled?: boolean;
+  isActive?: boolean;
 }

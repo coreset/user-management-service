@@ -22,8 +22,8 @@ export class Realm {
   @Column({ name: 'display_name', nullable: true })
   displayName: string;
 
-  @Column({ default: true, name: 'enabled' })
-  enabled: boolean;
+  @Column({ default: true, name: 'is_active' })
+  isActive: boolean;
 
   @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
