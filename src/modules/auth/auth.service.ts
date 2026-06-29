@@ -1,4 +1,4 @@
-import { 
+import {
   BadRequestException,
   ForbiddenException,
   Injectable,
@@ -146,7 +146,7 @@ export class AuthService {
     const signingKey = await this.realmsService.getActiveSigningKey(realmName);
     const accessExpiresIn = this.configService.get<string>('JWT_EXPIRE_IN', '1d');
     const token = this.jwtService.sign(payload, {
-      privateKey: signingKey.privateKey,
+      secret: signingKey.privateKey,
       algorithm: 'RS256',
       keyid: signingKey.kid, // stamps `kid` into the JWT header for verification
       expiresIn: accessExpiresIn,
@@ -247,7 +247,7 @@ export class AuthService {
     // Access token must be RS256 (realm key) to match the jwt-rs256 guard.
     const signingKey = await this.realmsService.getActiveSigningKey(realmName);
     const newAccessToken = this.jwtService.sign(payload, {
-      privateKey: signingKey.privateKey,
+      secret: signingKey.privateKey,
       algorithm: 'RS256',
       keyid: signingKey.kid,
       expiresIn: this.configService.get<string>('JWT_EXPIRE_IN', '1d'),
