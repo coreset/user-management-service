@@ -25,6 +25,7 @@ import { Audited } from '../../../common/audit/audited.decorator';
 @Audited()
 @Entity('users')
 @Unique(['realm', 'username'])
+@Unique(['realm', 'email'])
 export class User {
   @PrimaryGeneratedColumn('uuid')
   id: string;
@@ -36,7 +37,7 @@ export class User {
   @Column({ name: 'username', length: 100 })
   username!: string;
 
-  @Column({ unique: true, name: 'email' })
+  @Column({ name: 'email' })
   email: string;
 
   @Column({ name: 'is_email_verified', default: false })

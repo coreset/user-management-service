@@ -161,6 +161,10 @@ export class AuthService {
    *     this service and is also stored argon2-hashed in the DB, so asymmetric
    *     signing would add nothing here.
    */
+  
+  /**
+   * @see 
+   */
   async login(userId: string, context?: LoginContext) {
     // load the user (with its realm) so the token carries the realm claim
     const user = await this.userService.findById(userId);
@@ -323,7 +327,9 @@ export class AuthService {
   // create(createAuthDto: CreateAuthDto) {
   //   return 'This action adds a new auth';
   // }
-
+  /**
+   * @see 
+   */
   async register(registerDto: LocalRegisterDto) {
     const { realmId, email, firstName, lastName, avatarUrl, password } = registerDto;
     let userName:string = ''; 
