@@ -27,28 +27,55 @@ import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { Response } from 'express';
 import { AuthRequest as Request } from './types/request';
 import { VerifyIdentifierDto } from './dto/verify-indentifier.dto';
+import { LocalRegisterDto } from './dto/local-register.dto';
+import { plainToInstance } from 'class-transformer';
+import { LoginResponseDto } from './dto/login-response.dto';
+import { RegisterResponseDto } from './dto/register-response.dto';
 
 @Controller('auth')
 @ApiBearerAuth('authorization') // for add authrization header with swagger
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
+  /**
+   * @see 
+   */
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('local')) //  verifies email + password at login; does not issue the token.
+  @UseGuards(AuthGuard('local')) //  verifies username + password (realm-scoped); does not issue the token.
   @ApiBody({ type: LocalLoginDto }) // without dto in the request show parameters in the swagger
   @Post('login')
-  login(@Req() req: Request) {
-    const token = this.authService.login(req.user!.id, {
+  async login(@Req() req: Request) {
+    const result = await this.authService.login(req.user!.id, {
       ip: req.ip,
       userAgent: req.get('user-agent') ?? undefined,
     });
-    //return {id: req.user.id, token};
-    return token;
+    return plainToInstance(LoginResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
-  @Post()
-  create(@Body() createAuthDto: CreateAuthDto) {
-    return this.authService.create(createAuthDto);
+  // @Post()
+  // create(@Body() createAuthDto: CreateAuthDto) {
+  //   return this.authService.create(createAuthDto);
+  // }
+
+  /**
+   * @see 
+   */
+  @HttpCode(HttpStatus.OK)
+  @ApiBody({type: LocalRegisterDto})
+  @Post('register')
+  async register(@Body() localRegisterDto: LocalRegisterDto) {
+    const user = await this.authService.register(localRegisterDto);
+    return plainToInstance(
+      RegisterResponseDto,
+      {
+        message:
+          'Registration successful. Please verify your email address before logging in.',
+        user,
+      },
+      { excludeExtraneousValues: true },
+    );
   }
 
   @SetMetadata('role', [FixedUserRole.ADMIN])

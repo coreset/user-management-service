@@ -1,15 +1,25 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, Matches, MinLength } from 'class-validator';
+import { IsNotEmpty, IsString, IsUUID, Matches, MinLength } from 'class-validator';
 
 export class LocalLoginDto {
   @ApiProperty({
-    name: 'email',
+    name: 'username',
     required: true,
-    example: 'example@mail.com',
+    example: 'jdoe',
   })
   @IsString()
-  @IsEmail()
-  email: string;
+  username!: string;
+
+  @ApiProperty({
+    name: 'realmId',
+    required: true,
+    example: '7aed8708-8b30-4d0b-a80a-a1f516088078',
+    description:
+      'Realm the user belongs to. Required because the same username/email can exist in different realms.',
+  })
+  @IsString()
+  @IsUUID()
+  realmId!: string;
 
   @ApiProperty({
     name: 'password',
@@ -17,7 +27,6 @@ export class LocalLoginDto {
     example: '******',
   })
   @IsString()
-  @MinLength(6)
-  @Matches(/^(?=.*[0-9])/, { message: 'Password must contain at lease on number' })
-  password: string;
+  @IsNotEmpty()
+  password!: string;
 }

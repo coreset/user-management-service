@@ -1,14 +1,35 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, IsUrl, IsOptional, IsUUID, IsEmpty, MinLength, MaxLength, Matches, IsNotEmpty } from 'class-validator';
-
+import { IsEmail, IsEmpty, IsNotEmpty, IsOptional, IsPhoneNumber, IsString, IsUrl, IsUUID, Matches, MaxLength, MinLength } from 'class-validator';
 
 const NAME_REGEX = /^[a-zA-ZÀ-ÖØ-öø-ÿ\s'-]+$/;
-export class CreateUserDto {
+
+export class LocalRegisterDto {
+  @ApiProperty({
+    name: 'email',
+    required: true,
+    example: 'example@mail.com',
+  })
+  @IsString()
+  @IsEmail()
+  email!: string;
+
+  @ApiProperty({
+    name: 'password',
+    required: true,
+    example: '******',
+  })
+  @IsString()
+  @MinLength(6)
+  /**
+   * @TODO password validation must be dynamic 
+   */
+  @Matches(/^(?=.*[0-9])/, { message: 'Password must contain at lease on number' })
+  password!: string;
+
   @ApiProperty({
     name: 'username',
     required: false,
-    example: 'jdoe',
-    description: 'Unique within the realm; defaults to the email if omitted',
+    example: 'username',
   })
   @IsOptional()
   @IsString()
@@ -24,12 +45,10 @@ export class CreateUserDto {
   username?: string;
 
   @ApiProperty({
-    name: 'Organization',
+    name: 'realmId',
     required: true,
-    example: '7aed8708-8b30-4d0b-a80a-a1f516088078',
-    description: 'Realm the user belongs to',
+    example: '7aed8708-8b30-4d0b-a80a-a1f516088078'
   })
-  @IsString()
   @IsUUID()
   /**
    * @Description 
@@ -38,12 +57,36 @@ export class CreateUserDto {
   realmId!: string;
 
   @ApiProperty({
-    name: 'First name',
+    name: 'phoneNumber',
+    required: false,
+    example: '0706806040'
+  })
+  /**
+   * @TODO phone number validation must be dynamic 
+   */
+  @IsOptional()
+  @IsPhoneNumber('LK', {
+    message: 'Please provide a valid Sri Lankan phone number',
+  })
+  phoneNumber?: string;
+
+  @ApiProperty({
+    name: 'avatarUrl',
+    required: false,
+    example: 'https://i.pravatar.cc/300'
+  })
+  @IsOptional()
+  @IsString()
+  @IsUrl({}, { message: 'avatarUrl must be a valid URL' })
+  avatarUrl?: string;
+
+  @ApiProperty({
+    name: 'firstName',
     required: true,
     example: 'Samadhi'
   })
   @IsString()
-  @IsEmpty()
+  @IsNotEmpty()
   @MinLength(2)
   @MaxLength(50)
   @Matches(NAME_REGEX, {
@@ -52,9 +95,9 @@ export class CreateUserDto {
   firstName!: string;
 
   @ApiProperty({
-    name: 'First name',
+    name: 'lastName',
     required: true,
-    example: 'Samadhi'
+    example: 'Laksahan'
   })
   @IsString()
   @IsNotEmpty({ message: 'Last Name is required'})
@@ -65,35 +108,5 @@ export class CreateUserDto {
   })
   lastName!: string; 
 
-  @ApiProperty({
-    name: 'email',
-    required: true,
-    example: 'example@mail.com',
-  })
-  @IsString()
-  @IsEmail()
-  email!: string;
-
-  @ApiProperty({
-    name: 'Avatar URL',
-    required: false,
-    example: 'https://i.pravatar.cc/300'
-  })
-  @IsOptional()
-  @IsString()
-  @IsUrl({}, { message: 'avatarUrl must be a valid URL' })
-  avatarUrl?: string;
-
-  @ApiProperty({
-    name: 'password',
-    required: true,
-    example: '******',
-  })
-  @IsString()
-  @MinLength(6)
-  /**
-   * @TODO password validation must be dynamic 
-   */
-  @Matches(/^(?=.*[0-9])/, { message: 'Password must contain at lease on number' })
-  password!: string;
 }
+

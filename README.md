@@ -112,3 +112,10 @@ They model genuinely different scopes:
 | What | a row was inserted/updated/deleted | something happened (login, logout, failed login) |
 | Written by | the subscriber (automatic) | manual `recordAuthEvent()` in `auth.service` |
 | category column | `'DATA'` | `'AUTH'` |
+
+
+## Flow Testing 
+
+### Create new Realm 
+/auth/login
+enter useremail and password

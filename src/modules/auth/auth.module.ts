@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
-import { UsersService } from '../users/users.service';
 import { LocalStrategy } from './strategies/local.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
@@ -17,6 +16,8 @@ import { UserSession } from './entities/user-session.entity';
 import { PasswordHistory } from '../users/entities/password-history.entity';
 import { RealmsModule } from '../realms/realms.module';
 import { AuditModule } from '../../common/audit/audit.module';
+import { User } from '../users/entities/user.entity';
+import { SettingsModule } from '../settings/settings.module';
 
 @Module({
   imports: [
@@ -34,7 +35,9 @@ import { AuditModule } from '../../common/audit/audit.module';
       UserVerificationIdentifier,
       UserSession,
       PasswordHistory,
+      User,
     ]),
+    SettingsModule,
     RealmsModule, // provides RealmsService for RS256 signing + key lookup
     AuditModule, // provides AuditService for auth-event logging
   ],

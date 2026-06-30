@@ -1,9 +1,12 @@
 import {
   BadRequestException,
+  ConflictException,
   ForbiddenException,
   Injectable,
+  InternalServerErrorException,
   NotFoundException,
   UnauthorizedException,
+  UnprocessableEntityException,
 } from '@nestjs/common';
 import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
@@ -26,6 +29,8 @@ import { RealmsService } from '../realms/realms.service';
 import { PasswordHistory } from '../users/entities/password-history.entity';
 import { User } from '../users/entities/user.entity';
 import { AuditService } from '../../common/audit/audit.service';
+import { LocalRegisterDto } from './dto/local-register.dto';
+import { SettingsService } from '../settings/settings.service';
 
 /** How many previous passwords to block from reuse. */
 const PASSWORD_HISTORY_COUNT = 5;
@@ -52,21 +57,29 @@ export class AuthService {
     private readonly configService: ConfigService,
     private readonly realmsService: RealmsService,
     private readonly auditService: AuditService,
+    private readonly settingsService: SettingsService,
+    @InjectRepository(User) private UserRepo: Repository<User>,
     @InjectRepository(RefreshToken) private RefreshTokenRepo: Repository<RefreshToken>,
     @InjectRepository(UserVerificationIdentifier) private UserVerificationIdentifierRepo: Repository<UserVerificationIdentifier>,
     @InjectRepository(UserSession) private userSessionRepo: Repository<UserSession>,
     @InjectRepository(PasswordHistory) private passwordHistoryRepo: Repository<PasswordHistory>,
   ) {}
 
-  async validateUser(email: string, password: string) {
-    const user = await this.userService.findByEmail(email);
+  async validateUser(username: string, password: string, realmId: string) {
+    if (!realmId) {
+      throw new BadRequestException('realmId is required');
+    }
+
+    // username is unique only WITHIN a realm, so the lookup must be scoped.
+    const user = await this.userService.findByUsername(username, realmId);
     if (!user) {
       await this.auditService.recordAuthEvent({
         action: 'USER_LOGIN_FAILED',
         status: 'FAILURE',
-        actorUsername: email,
+        actorUsername: username,
+        realmId,
       });
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid username or password');
     }
     const isPasswordMatch = await compare(password, user.passwordHash);
     if (!isPasswordMatch) {
@@ -74,10 +87,26 @@ export class AuthService {
         action: 'USER_LOGIN_FAILED',
         status: 'FAILURE',
         actorId: user.id,
-        actorUsername: email,
+        actorUsername: username,
+        realmId,
       });
-      throw new UnauthorizedException('Invalid email or password');
+      throw new UnauthorizedException('Invalid username or password');
     }
+
+    // block login until the email address has been verified
+    if (!user.isEmailVerified) {
+      await this.auditService.recordAuthEvent({
+        action: 'USER_LOGIN_FAILED',
+        status: 'FAILURE',
+        actorId: user.id,
+        actorUsername: username,
+        realmId,
+      });
+      throw new UnauthorizedException(
+        'Your account email is not verified. Please verify your email before logging in.',
+      );
+    }
+
     return user;
   }
 
@@ -291,8 +320,68 @@ export class AuthService {
     return false;
   }
 
-  create(createAuthDto: CreateAuthDto) {
-    return 'This action adds a new auth';
+  // create(createAuthDto: CreateAuthDto) {
+  //   return 'This action adds a new auth';
+  // }
+
+  async register(registerDto: LocalRegisterDto) {
+    const { realmId, email, firstName, lastName, avatarUrl, password } = registerDto;
+    let userName:string = ''; 
+    if (!registerDto.username) {
+      userName = registerDto.email;
+    } else {
+      userName = registerDto.username;
+    }
+
+    // check realm 
+    const realm = await this.realmsService.findOne(registerDto.realmId);
+    if (!realm) {
+      throw new NotFoundException('Organization ID not found');
+    }
+
+    // check user uniqueness WITHIN the realm (email/username are realm-scoped)
+    const userByEmail = await this.userService.findByEmail(registerDto.email, realmId);
+    if (userByEmail) {
+      throw new ConflictException('Email is already registered');
+    }
+
+    const userByUsername = await this.userService.findByUsername(userName, realmId);
+    if (userByUsername) {
+      throw new ConflictException('Username is already registered');
+    }
+
+    // check realm settings for user registration
+    const settings = await this.settingsService.list(realmId);
+    settings.forEach(setting => {
+      switch (setting.key) {
+        case 'allow_user_registration':
+          const { value } = setting;
+          if (value == 'false' ) throw new UnprocessableEntityException('This organization not allow user registration')
+          break;
+        default:
+          null
+
+      }
+    })
+
+    const user = this.UserRepo.create({
+      username: userName,
+      email,
+      firstName,
+      lastName,
+      avatarUrl,
+      passwordHash: password,
+      realm,
+    });
+
+    try {
+      const savedUser = await this.UserRepo.save(user);
+      return savedUser;
+    } catch (error) {
+      throw new InternalServerErrorException('Failed to register user');
+    }
+
+
   }
 
   findAll(userId: string) {

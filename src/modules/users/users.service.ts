@@ -12,10 +12,14 @@ import { User } from './entities/user.entity';
 import { Realm } from '../realms/entities/realm.entity';
 import { Repository, QueryFailedError, IsNull, In } from 'typeorm';
 import { randomBytes } from 'crypto';
+import { RealmsService } from '../realms/realms.service';
 
 @Injectable()
 export class UsersService {
-  constructor(@InjectRepository(User) private UserRepo: Repository<User>) {}
+  constructor(
+    private readonly realmsService: RealmsService,
+    @InjectRepository(User) private UserRepo: Repository<User>
+  ) {}
 
   //async create(createUserDto: CreateUserDto) {
   //  const user = this.UserRepo.create(createUserDto);
@@ -23,6 +27,11 @@ export class UsersService {
   //}
 
   async create(createUserDto: CreateUserDto): Promise<User> {
+
+    const realm = await this.realmsService.findOne(createUserDto.realmId);
+    if (!realm) {
+      throw new NotFoundException('Organization(realm) ID not found');
+    }
     const user = this.UserRepo.create({
       username: createUserDto.username ?? createUserDto.email,
       email: createUserDto.email,
@@ -32,9 +41,7 @@ export class UsersService {
       // @BeforeInsert hashes this value; fall back to a random secret
       // (e.g. social logins that never set a password).
       passwordHash: createUserDto.password ?? randomBytes(16).toString('hex'),
-      realm: createUserDto.realmId
-        ? ({ id: createUserDto.realmId } as Realm)
-        : undefined,
+      realm: realm
     });
 
     try {
@@ -110,12 +117,22 @@ export class UsersService {
     return this.UserRepo.update(userId, { passwordHash: newHashedPassword });
   }
 
-  async findByEmail(email: string): Promise<User | null> {
-    const user = await this.UserRepo.findOne({ where: { email } });
-    //if (!user) {
-    //  throw new NotFoundException(`User with email not found`);
-    //}
-    return user;
+  /**
+   * @see
+   */
+  findByEmail(email: string, realmId?: string): Promise<User | null> {
+    return this.UserRepo.findOne({
+      where: { email, ...(realmId ? { realm: { id: realmId } } : {}) },
+    });
+  }
+
+  /**
+   * @see
+   */
+  findByUsername(username: string, realmId?: string): Promise<User | null> {
+    return this.UserRepo.findOne({
+      where: { username, ...(realmId ? { realm: { id: realmId } } : {}) },
+    });
   }
 
   async restore(id: string) {
