@@ -19,7 +19,7 @@ import { CreateAuthDto } from './dto/create-auth.dto';
 import { UpdateAuthDto } from './dto/update-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { LocalLoginDto } from './dto/local-login.dto';
-import { ApiBody, ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBody, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { FixedUserRole } from '../roles/enums/role.enum';
 import { RolesGuard } from '../roles/guards/roles/roles.guard';
 import { ChangePasswordDto } from './dto/change-password.dto';
@@ -41,14 +41,29 @@ export class AuthController {
    * @see 
    */
   @HttpCode(HttpStatus.OK)
-  @UseGuards(AuthGuard('local')) //  verifies username + password (realm-scoped); does not issue the token.
-  @ApiBody({ type: LocalLoginDto }) // without dto in the request show parameters in the swagger
-  @Post('login')
-  async login(@Req() req: Request) {
-    const result = await this.authService.login(req.user!.id, {
-      ip: req.ip,
-      userAgent: req.get('user-agent') ?? undefined,
-    });
+  @ApiParam({ name: 'realmName', example: 'master', description: 'Realm the user belongs to' })
+  @ApiBody({ type: LocalLoginDto })
+  @Post(':realmName/login')
+  async login(
+    @Param('realmName') realmName: string,
+    @Body() loginDto: LocalLoginDto,
+    @Req() req: Request,
+  ) {
+    // Credentials are validated here (realm comes from the path); `user` is then
+    // handed to login() so it isn't fetched twice.
+    const user = await this.authService.validateUser(
+      loginDto.username,
+      loginDto.password,
+      realmName,
+    );
+    const result = await this.authService.login(
+      user.id,
+      {
+        ip: req.ip,
+        userAgent: req.get('user-agent') ?? undefined,
+      },
+      user,
+    );
     return plainToInstance(LoginResponseDto, result, {
       excludeExtraneousValues: true,
     });

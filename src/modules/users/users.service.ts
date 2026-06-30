@@ -132,6 +132,7 @@ export class UsersService {
   findByUsername(username: string, realmId?: string): Promise<User | null> {
     return this.UserRepo.findOne({
       where: { username, ...(realmId ? { realm: { id: realmId } } : {}) },
+      relations: ['realm'],
     });
   }
 

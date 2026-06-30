@@ -2,7 +2,6 @@ import { Module } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
-import { LocalStrategy } from './strategies/local.strategy';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -44,7 +43,6 @@ import { SettingsModule } from '../settings/settings.module';
   controllers: [AuthController],
   providers: [
     AuthService,
-    LocalStrategy,
     JwtStrategy,
     JwtRs256Strategy,
     RefreshJwtStrategy,

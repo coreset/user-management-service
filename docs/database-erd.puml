@@ -72,7 +72,7 @@ entity USERS {
   * id : UUID <<PK>>
   --
   username : STRING ' <<UNIQUE per realm>>
-  email : STRING <<UNIQUE>>
+  email : STRING ' <<UNIQUE per realm>>
   is_email_verified : BOOLEAN
   password_hash : STRING ' bcrypt; hashed on @BeforeInsert
   phone_number : STRING <<nullable>>
@@ -91,6 +91,7 @@ entity USERS {
   --
   # realm_id : UUID <<FK>>
   ' <<UNIQUE (realm_id, username)>>
+  ' <<UNIQUE (realm_id, email)>>
 }
 
 ' Open key-value custom attributes for a user (e.g. department, employee_id).

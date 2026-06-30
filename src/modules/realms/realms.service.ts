@@ -136,6 +136,11 @@ export class RealmsService {
     return this.realmRepo.find();
   }
 
+  /** Resolves a realm by its (globally-unique) name; null if not found. */
+  findByName(realmName: string): Promise<Realm | null> {
+    return this.realmRepo.findOne({ where: { realmName } });
+  }
+
   async findOne(id: string): Promise<Realm> {
     const realm = await this.realmRepo.findOne({ where: { id } });
     if (!realm) {

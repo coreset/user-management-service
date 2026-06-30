@@ -35,6 +35,14 @@ import { SettingsService } from '../settings/settings.service';
 /** How many previous passwords to block from reuse. */
 const PASSWORD_HISTORY_COUNT = 5;
 
+/**
+ * A valid (cost-12) bcrypt hash that no real password produces. Used to run a
+ * throwaway bcrypt compare on the user-not-found path so login responses take
+ * the same time whether or not the username exists (resists enumeration).
+ */
+const DUMMY_PASSWORD_HASH =
+  '$2a$12$R9h/cIPz0gi.URNNX3kh2OPST9/PgBkqquzi.Ss7KIUgO2t0jWMUW';
+
 /** Optional context captured at login for the session record. */
 export type LoginContext = {
   ip?: string;
@@ -65,14 +73,30 @@ export class AuthService {
     @InjectRepository(PasswordHistory) private passwordHistoryRepo: Repository<PasswordHistory>,
   ) {}
 
-  async validateUser(username: string, password: string, realmId: string) {
-    if (!realmId) {
-      throw new BadRequestException('realmId is required');
+  /**
+   * Validates credentials for a username within a realm (realm comes from the
+   * URL path, e.g. /auth/:realmName/login). Enforces account lockout, equalizes
+   * timing to resist username enumeration, and blocks unverified emails.
+   */
+  async validateUser(username: string, password: string, realmName: string) {
+    if (!realmName) {
+      throw new BadRequestException('realm is required');
     }
+
+    // Resolve the realm from its (globally-unique) name.
+    const realm = await this.realmsService.findByName(realmName);
+    if (!realm) {
+      throw new NotFoundException(`Realm '${realmName}' not found`);
+    }
+    const realmId = realm.id;
 
     // username is unique only WITHIN a realm, so the lookup must be scoped.
     const user = await this.userService.findByUsername(username, realmId);
+
+    // Anti-enumeration: run a bcrypt compare even when the user is missing so
+    // the not-found path costs the same wall-clock time as a wrong password.
     if (!user) {
+      await compare(password, DUMMY_PASSWORD_HASH);
       await this.auditService.recordAuthEvent({
         action: 'USER_LOGIN_FAILED',
         status: 'FAILURE',
@@ -81,8 +105,24 @@ export class AuthService {
       });
       throw new UnauthorizedException('Invalid username or password');
     }
+
+    // Reject locked accounts before touching the password.
+    if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+      await this.auditService.recordAuthEvent({
+        action: 'USER_LOGIN_FAILED',
+        status: 'FAILURE',
+        actorId: user.id,
+        actorUsername: username,
+        realmId,
+      });
+      throw new UnauthorizedException(
+        'Account is temporarily locked due to too many failed login attempts. Please try again later.',
+      );
+    }
+
     const isPasswordMatch = await compare(password, user.passwordHash);
     if (!isPasswordMatch) {
+      await this.registerFailedAttempt(user, realmId);
       await this.auditService.recordAuthEvent({
         action: 'USER_LOGIN_FAILED',
         status: 'FAILURE',
@@ -107,7 +147,52 @@ export class AuthService {
       );
     }
 
+    // Valid credentials: clear any prior lockout counters.
+    if (user.failedLoginAttempts > 0 || user.lockedUntil) {
+      await this.UserRepo.update(user.id, {
+        failedLoginAttempts: 0,
+        lockedUntil: null,
+      });
+      user.failedLoginAttempts = 0;
+      user.lockedUntil = null;
+    }
+
     return user;
+  }
+
+  /**
+   * Increments the failed-login counter and locks the account once the realm's
+   * `max_login_attempts` threshold is reached, for `lockout_duration_seconds`.
+   */
+  private async registerFailedAttempt(user: User, realmId: string): Promise<void> {
+    const maxAttempts = await this.getIntSetting(realmId, 'max_login_attempts', 5);
+    const lockoutSeconds = await this.getIntSetting(
+      realmId,
+      'lockout_duration_seconds',
+      900,
+    );
+
+    const attempts = (user.failedLoginAttempts ?? 0) + 1;
+    const patch: Partial<User> = { failedLoginAttempts: attempts };
+    if (attempts >= maxAttempts) {
+      patch.lockedUntil = new Date(Date.now() + lockoutSeconds * 1000);
+    }
+    await this.UserRepo.update(user.id, patch);
+  }
+
+  /** Reads an integer realm setting, falling back to a default if unset/invalid. */
+  private async getIntSetting(
+    realmId: string,
+    key: string,
+    fallback: number,
+  ): Promise<number> {
+    try {
+      const setting = await this.settingsService.get(realmId, key);
+      const n = Number(setting.value);
+      return Number.isFinite(n) && n > 0 ? n : fallback;
+    } catch {
+      return fallback;
+    }
   }
 
   /*
@@ -165,9 +250,11 @@ export class AuthService {
   /**
    * @see 
    */
-  async login(userId: string, context?: LoginContext) {
-    // load the user (with its realm) so the token carries the realm claim
-    const user = await this.userService.findById(userId);
+  async login(userId: string, context?: LoginContext, preloaded?: User) {
+    // Reuse the caller's already-loaded user when provided (the local-login path
+    // hands us the user from validateUser, avoiding a second DB round-trip);
+    // otherwise load it (with its realm) so the token can carry the realm claim.
+    const user = preloaded ?? (await this.userService.findById(userId));
     if (!user) throw new NotFoundException('User not found');
 
     const realmName = user.realm?.realmName;
@@ -224,6 +311,12 @@ export class AuthService {
       realmId: user.realm?.id,
       ipAddress: context?.ip ?? null,
       userAgent: context?.userAgent ?? null,
+    });
+
+    // ----- Track last successful login --------------------------------------
+    await this.UserRepo.update(user.id, {
+      lastLoginAt: new Date(),
+      lastLoginIp: context?.ip ?? null,
     });
 
     // return values to clients.

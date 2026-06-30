@@ -1,6 +1,10 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsString, IsUUID, Matches, MinLength } from 'class-validator';
+import { IsNotEmpty, IsString, Matches, MinLength } from 'class-validator';
 
+/**
+ * Login body. The realm is taken from the URL path (`/auth/:realmName/login`),
+ * NOT from the body — the same username can exist in multiple realms.
+ */
 export class LocalLoginDto {
   @ApiProperty({
     name: 'username',
@@ -8,18 +12,8 @@ export class LocalLoginDto {
     example: 'jdoe',
   })
   @IsString()
+  @IsNotEmpty()
   username!: string;
-
-  @ApiProperty({
-    name: 'realmId',
-    required: true,
-    example: '7aed8708-8b30-4d0b-a80a-a1f516088078',
-    description:
-      'Realm the user belongs to. Required because the same username/email can exist in different realms.',
-  })
-  @IsString()
-  @IsUUID()
-  realmId!: string;
 
   @ApiProperty({
     name: 'password',
