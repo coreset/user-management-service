@@ -12,7 +12,6 @@ import {
   HttpStatus,
   Req,
   Res,
-  SetMetadata,
 } from '@nestjs/common';
 import { AuthService } from './auth.service';
 import { CreateAuthDto } from './dto/create-auth.dto';
@@ -21,7 +20,8 @@ import { AuthGuard } from '@nestjs/passport';
 import { LocalLoginDto } from './dto/local-login.dto';
 import { ApiBody, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { FixedUserRole } from '../roles/enums/role.enum';
-import { RolesGuard } from '../roles/guards/roles/roles.guard';
+import { Roles } from '../roles/decorators/roles.decorator';
+import { Public } from './decorators/public.decorator';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
 import { Response } from 'express';
@@ -40,6 +40,7 @@ export class AuthController {
   /**
    * @see 
    */
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiParam({ name: 'realmName', example: 'master', description: 'Realm the user belongs to' })
   @ApiBody({ type: LocalLoginDto })
@@ -77,6 +78,7 @@ export class AuthController {
   /**
    * @see 
    */
+  @Public()
   @HttpCode(HttpStatus.OK)
   @ApiParam({ name: 'realmName', example: 'master', description: 'Realm the user registers into' })
   @ApiBody({type: LocalRegisterDto})
@@ -97,14 +99,13 @@ export class AuthController {
     );
   }
 
-  @SetMetadata('role', [FixedUserRole.ADMIN])
-  @UseGuards(RolesGuard)
-  @UseGuards(AuthGuard('jwt-rs256')) // authorizes every protected request from the RS256 Bearer access token
+  @Roles([FixedUserRole.ADMIN])
   @Get()
   findAll(@Req() req: Request) {
     return this.authService.findAll(req.user.id);
   }
 
+  @Public()
   @UseGuards(AuthGuard('refresh-jwt'))
   @Post('refresh') // validates the refresh token against the hashed DB copy.
   refreshToken(@Req() req: Request) {
@@ -122,21 +123,22 @@ export class AuthController {
     return this.authService.update(id, updateAuthDto);
   }
 
-  @SetMetadata('role', [FixedUserRole.ADMIN]) // only ADMIN can delete user
+  @Roles([FixedUserRole.ADMIN]) // only ADMIN can delete user
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.authService.remove(id);
   }
 
+  @Public()
   @UseGuards(AuthGuard('refresh-jwt'))
   @Post('signout')
   async signOut(@Req() req: Request) {
-    console.log("signout request body :", req.body);
     const refreshToken: string = req.get('authorization')!.replace('Bearer', '').trim();
     await this.authService.signOutCurrentDevice(req.user.id, refreshToken);
     return { message: 'Signed out from current device' };
   }
 
+  @Public()
   @UseGuards(AuthGuard('refresh-jwt'))
   @Post('signout/all')
   async signOutAll(@Req() req: Request) {
@@ -164,6 +166,7 @@ export class AuthController {
   //   6. Our callback handler then issues OUR own JWT and redirects the browser
   //        back to the frontend with the tokens in the URL.
 
+  @Public()
   @Get('google/login')
   @UseGuards(AuthGuard('google')) // starts the flow → guard redirects to Google
   async googleAuth() {
@@ -171,6 +174,7 @@ export class AuthController {
     // so nothing here needs to run.
   }
 
+  @Public()
   @Get('google/callback')
   @UseGuards(AuthGuard('google')) // Google sends the user here with ?code=...
   async googleCallback(@Req() req: Request, @Res() res: Response) {
@@ -182,7 +186,6 @@ export class AuthController {
   }
 
   // change password **********************************************************
-  @UseGuards(AuthGuard('jwt-rs256'))
   @Put('change-password')
   async changePassword(
     @Body() changePasswordDto: ChangePasswordDto,
@@ -195,6 +198,7 @@ export class AuthController {
     );
   }
 
+  @Public()
   @ApiParam({ name: 'realmName', example: 'master', description: 'Realm the user belongs to' })
   @Post(':realmName/forgot-password')
   forgotPassword(
@@ -208,6 +212,7 @@ export class AuthController {
     );
   }
 
+  @Public()
   @ApiParam({ name: 'realmName', example: 'master', description: 'Realm the user belongs to' })
   @Post(':realmName/verify-identifier')
   verifyIdentifier(

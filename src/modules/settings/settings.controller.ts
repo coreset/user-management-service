@@ -6,21 +6,17 @@ import {
   Param,
   Body,
   Req,
-  UseGuards,
-  SetMetadata,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { SettingsService } from './settings.service';
 import { SetSettingDto } from './dto/set-setting.dto';
-import { RolesGuard } from '../roles/guards/roles/roles.guard';
 import { FixedUserRole } from '../roles/enums/role.enum';
+import { Roles } from '../roles/decorators/roles.decorator';
 import { AuthRequest } from '../auth/types/request';
 
 @Controller('settings')
 @ApiBearerAuth('authorization')
-@SetMetadata('role', [FixedUserRole.SUPER_ADMIN, FixedUserRole.REALM_ADMIN])
-@UseGuards(AuthGuard('jwt-rs256'), RolesGuard)
+@Roles([FixedUserRole.SUPER_ADMIN, FixedUserRole.REALM_ADMIN])
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 

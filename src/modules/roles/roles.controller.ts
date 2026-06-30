@@ -6,19 +6,16 @@ import {
   Patch,
   Param,
   Delete,
-  UseGuards,
   Req,
-  SetMetadata,
   ParseUUIDPipe,
   Query,
 } from '@nestjs/common';
 import { RolesService } from './roles.service';
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
-import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
-import { RolesGuard } from './guards/roles/roles.guard';
 import { FixedUserRole } from './enums/role.enum';
+import { Roles } from './decorators/roles.decorator';
 import { AuthRequest } from '../auth/types/request';
 import { PaginateRoleDto } from './dto/paginate-role.dto';
 import { SearchRoleDto } from './dto/search-role.dto';
@@ -31,8 +28,7 @@ export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
   @Post()
-  @SetMetadata('role', [FixedUserRole.SUPER_ADMIN, FixedUserRole.REALM_ADMIN])
-  @UseGuards(AuthGuard('jwt-rs256'), RolesGuard)
+  @Roles([FixedUserRole.SUPER_ADMIN, FixedUserRole.REALM_ADMIN])
   create(@Req() req: AuthRequest, @Body() createRoleDto: CreateRoleDto) {
     // Realm roles are scoped to the caller's realm.
     return this.rolesService.create(createRoleDto, req.user.realmId);

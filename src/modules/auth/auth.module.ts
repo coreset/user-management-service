@@ -1,7 +1,9 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
 import { UsersModule } from '../users/users.module';
+import { RolesGuard } from '../roles/guards/roles/roles.guard';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
@@ -49,6 +51,11 @@ import { SettingsModule } from '../settings/settings.module';
     JwtRs256Guard,
     RefreshJwtStrategy,
     GoogleStrategy,
+    // Global guards — order matters: authenticate first (sets req.user), then
+    // authorize. Routes opt out of auth with @Public(); RolesGuard only enforces
+    // when a route declares @Roles([...]).
+    { provide: APP_GUARD, useClass: JwtRs256Guard },
+    { provide: APP_GUARD, useClass: RolesGuard },
   ],
   exports: [JwtModule, JwtStrategy, JwtRs256Guard],
 })

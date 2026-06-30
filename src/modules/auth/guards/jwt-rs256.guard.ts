@@ -16,21 +16,33 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
+import { Reflector } from '@nestjs/core';
 import type { Request } from 'express';
 import * as jwt from 'jsonwebtoken';
 import { AuthJwtPayload } from '../types/auth-jwtPayload';
 import { CurrentUser } from '../types/current-user';
 import { AuthService } from '../auth.service';
 import { RealmsService } from '../../realms/realms.service';
+import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 
 @Injectable()
 export class JwtRs256Guard implements CanActivate {
   constructor(
     private readonly authService: AuthService,
     private readonly realmsService: RealmsService,
+    private readonly reflector: Reflector,
   ) {}
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
+    // Routes marked @Public() skip authentication entirely.
+    const isPublic = this.reflector.getAllAndOverride<boolean>(IS_PUBLIC_KEY, [
+      context.getHandler(),
+      context.getClass(),
+    ]);
+    if (isPublic) {
+      return true;
+    }
+
     const request = context.switchToHttp().getRequest<Request>();
 
     const token = this.extractBearerToken(request);

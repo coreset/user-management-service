@@ -4,20 +4,16 @@ import {
   Param,
   ParseUUIDPipe,
   Query,
-  UseGuards,
-  SetMetadata,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuditService } from './audit.service';
 import { AuditLogQueryDto } from './dto/audit-log-query.dto';
-import { RolesGuard } from '../../modules/roles/guards/roles/roles.guard';
 import { FixedUserRole } from '../../modules/roles/enums/role.enum';
+import { Roles } from '../../modules/roles/decorators/roles.decorator';
 
 @Controller('audit-logs')
 @ApiBearerAuth('authorization')
-@SetMetadata('role', [FixedUserRole.SUPER_ADMIN])
-@UseGuards(AuthGuard('jwt-rs256'), RolesGuard)
+@Roles([FixedUserRole.SUPER_ADMIN])
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 

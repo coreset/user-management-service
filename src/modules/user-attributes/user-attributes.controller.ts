@@ -5,21 +5,17 @@ import {
   Delete,
   Param,
   Body,
-  UseGuards,
-  SetMetadata,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { UserAttributesService } from './user-attributes.service';
 import { SetAttributeDto } from './dto/set-attribute.dto';
-import { RolesGuard } from '../roles/guards/roles/roles.guard';
 import { FixedUserRole } from '../roles/enums/role.enum';
+import { Roles } from '../roles/decorators/roles.decorator';
 
 @Controller('users/:userId/attributes')
 @ApiBearerAuth('authorization')
-@SetMetadata('role', [FixedUserRole.SUPER_ADMIN, FixedUserRole.REALM_ADMIN])
-@UseGuards(AuthGuard('jwt-rs256'), RolesGuard)
+@Roles([FixedUserRole.SUPER_ADMIN, FixedUserRole.REALM_ADMIN])
 export class UserAttributesController {
   constructor(private readonly userAttributesService: UserAttributesService) {}
 
