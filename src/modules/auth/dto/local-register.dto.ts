@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsEmpty, IsNotEmpty, IsOptional, IsPhoneNumber, IsString, IsUrl, IsUUID, Matches, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, IsPhoneNumber, IsString, IsUrl, Matches, MaxLength, MinLength } from 'class-validator';
 
 const NAME_REGEX = /^[a-zA-ZÀ-ÖØ-öø-ÿ\s'-]+$/;
 
@@ -43,18 +43,6 @@ export class LocalRegisterDto {
     message: 'username must not contain consecutive underscores or dots',
   })
   username?: string;
-
-  @ApiProperty({
-    name: 'realmId',
-    required: true,
-    example: '7aed8708-8b30-4d0b-a80a-a1f516088078'
-  })
-  @IsUUID()
-  /**
-   * @Description 
-   * UUID of realm that already registered 
-   */
-  realmId!: string;
 
   @ApiProperty({
     name: 'phoneNumber',

@@ -423,23 +423,24 @@ export class AuthService {
   /**
    * @see 
    */
-  async register(registerDto: LocalRegisterDto) {
-    const { realmId, email, firstName, lastName, avatarUrl, password } = registerDto;
-    let userName:string = ''; 
+  async register(registerDto: LocalRegisterDto, realmName: string) {
+    const { email, firstName, lastName, avatarUrl, password } = registerDto;
+    let userName:string = '';
     if (!registerDto.username) {
       userName = registerDto.email;
     } else {
       userName = registerDto.username;
     }
 
-    // check realm 
-    const realm = await this.realmsService.findOne(registerDto.realmId);
+    // resolve the realm from its name (taken from the URL path)
+    const realm = await this.realmsService.findByName(realmName);
     if (!realm) {
-      throw new NotFoundException('Organization ID not found');
+      throw new NotFoundException(`Realm '${realmName}' not found`);
     }
+    const realmId = realm.id;
 
     // check user uniqueness WITHIN the realm (email/username are realm-scoped)
-    const userByEmail = await this.userService.findByEmail(registerDto.email, realmId);
+    const userByEmail = await this.userService.findByEmail(email, realmId);
     if (userByEmail) {
       throw new ConflictException('Email is already registered');
     }
@@ -611,13 +612,20 @@ export class AuthService {
     return false;
   }
 
-  async forgotPassword(email: string, type: NotifyType) {
-    // 1. Find user
-    const user = await this.userService.findByEmail(email);
+  async forgotPassword(email: string, type: NotifyType, realmName: string) {
+    // 0. Resolve realm (email is unique only within a realm)
+    const realm = await this.realmsService.findByName(realmName);
+    if (!realm) {
+      // Don't reveal realm existence; treat like a non-existent user.
+      return { message: 'if this user exits, they will receive an email' };
+    }
+
+    // 1. Find user within the realm
+    const user = await this.userService.findByEmail(email, realm.id);
     if (!user) {
-      // Don't reveal if user doesn't exist for security best practice.
-      //this.logger.log(`Password reset requested for non-existent email: ${email}`);
-      return; // Silent return
+      // Return the SAME generic message as the success path so a caller can't
+      // tell whether the email exists in this realm (anti-enumeration).
+      return { message: 'if this user exits, they will receive an email' };
     }
 
     // 2. Invalidate any existing tokens
@@ -670,13 +678,17 @@ export class AuthService {
     return { message: 'if this user exits, they will receive an email' };
   }
 
-  async verifyIdentifier(secret: string, user: string) {
+  async verifyIdentifier(secret: string, user: string, realmName: string) {
     let userId: string;
     let type: NotifyType;
 
     if (user.includes('@')) {
-      // Type: email (code flow)
-      const userEntity = await this.userService.findByEmail(user);
+      // Type: email (code flow) — email is unique only within a realm.
+      const realm = await this.realmsService.findByName(realmName);
+      if (!realm) {
+        throw new UnauthorizedException('Invalid user');
+      }
+      const userEntity = await this.userService.findByEmail(user, realm.id);
       if (!userEntity) {
         throw new UnauthorizedException('Invalid user');
       }

@@ -78,10 +78,14 @@ export class AuthController {
    * @see 
    */
   @HttpCode(HttpStatus.OK)
+  @ApiParam({ name: 'realmName', example: 'master', description: 'Realm the user registers into' })
   @ApiBody({type: LocalRegisterDto})
-  @Post('register')
-  async register(@Body() localRegisterDto: LocalRegisterDto) {
-    const user = await this.authService.register(localRegisterDto);
+  @Post(':realmName/register')
+  async register(
+    @Param('realmName') realmName: string,
+    @Body() localRegisterDto: LocalRegisterDto,
+  ) {
+    const user = await this.authService.register(localRegisterDto, realmName);
     return plainToInstance(
       RegisterResponseDto,
       {
@@ -127,6 +131,7 @@ export class AuthController {
   @UseGuards(AuthGuard('refresh-jwt'))
   @Post('signout')
   async signOut(@Req() req: Request) {
+    console.log("signout request body :", req.body);
     const refreshToken: string = req.get('authorization')!.replace('Bearer', '').trim();
     await this.authService.signOutCurrentDevice(req.user.id, refreshToken);
     return { message: 'Signed out from current device' };
@@ -190,21 +195,29 @@ export class AuthController {
     );
   }
 
-  @Post('forgot-password')
-  forgotPassword(@Body() forgotPasswordDto: ForgotPasswordDto) {
+  @ApiParam({ name: 'realmName', example: 'master', description: 'Realm the user belongs to' })
+  @Post(':realmName/forgot-password')
+  forgotPassword(
+    @Param('realmName') realmName: string,
+    @Body() forgotPasswordDto: ForgotPasswordDto,
+  ) {
     return this.authService.forgotPassword(
       forgotPasswordDto.email,
       forgotPasswordDto.type,
+      realmName,
     );
   }
 
-  @Post('verify-identifier')
+  @ApiParam({ name: 'realmName', example: 'master', description: 'Realm the user belongs to' })
+  @Post(':realmName/verify-identifier')
   verifyIdentifier(
+    @Param('realmName') realmName: string,
     @Body() verifyIdentifierDto: VerifyIdentifierDto,
   ) {
     return this.authService.verifyIdentifier(
       verifyIdentifierDto.token,
       verifyIdentifierDto.user,
+      realmName,
     );
   }
 }

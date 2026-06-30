@@ -3,20 +3,20 @@ import { IsString, Matches, MinLength } from 'class-validator';
 
 export class ChangePasswordDto {
   @ApiProperty({
-    name: 'old password',
+    name: 'oldPassword',
     required: true,
     example: 'example@mail.com',
   })
   @IsString()
-  oldPassword: string;
+  oldPassword!: string;
 
   @ApiProperty({
-    name: 'new password',
+    name: 'newPassword',
     required: true,
     example: '******',
   })
   @IsString()
   @MinLength(6)
   @Matches(/^(?=.*[0-9])/, { message: 'Password must contain at lease on number' })
-  newPassword: string;
+  newPassword!: string;
 }

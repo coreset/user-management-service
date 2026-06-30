@@ -6,6 +6,7 @@ import { JwtModule } from '@nestjs/jwt';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { JwtStrategy } from './strategies/jwt.strategy';
 import { JwtRs256Strategy } from './strategies/jwt-rs256.strategy';
+import { JwtRs256Guard } from './guards/jwt-rs256.guard';
 import { RefreshJwtStrategy } from './strategies/refresh.strategy';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { GoogleStrategy } from './strategies/google.strategy';
@@ -45,10 +46,11 @@ import { SettingsModule } from '../settings/settings.module';
     AuthService,
     JwtStrategy,
     JwtRs256Strategy,
+    JwtRs256Guard,
     RefreshJwtStrategy,
     GoogleStrategy,
   ],
-  exports: [JwtModule, JwtStrategy],
+  exports: [JwtModule, JwtStrategy, JwtRs256Guard],
 })
 
 export class AuthModule {}
