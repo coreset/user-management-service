@@ -99,7 +99,7 @@ export class AuthController {
     );
   }
 
-  @Roles([FixedUserRole.ADMIN])
+  @Roles([FixedUserRole.SUPER_ADMIN, FixedUserRole.ADMIN])
   @Get()
   findAll(@Req() req: Request) {
     return this.authService.findAll(req.user.id);
