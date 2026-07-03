@@ -12,12 +12,12 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { RealmsService } from './realms.service';
 import { CreateRealmDto } from './dto/create-realm.dto';
 import { UpdateRealmDto } from './dto/update-realm.dto';
-import { FixedUserRole } from '../roles/enums/role.enum';
-import { Roles } from '../roles/decorators/roles.decorator';
+import { Permissions } from '../permission/decorators/permissions.decorator';
+import { PermissionKey } from '../permission/constants/permission-key.enum';
 
 @Controller('realms')
 @ApiBearerAuth('authorization')
-@Roles([FixedUserRole.SUPER_ADMIN])
+@Permissions([PermissionKey.REALMS_MANAGE])
 export class RealmsController {
   constructor(private readonly realmsService: RealmsService) {}
 

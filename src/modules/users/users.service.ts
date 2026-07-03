@@ -109,7 +109,7 @@ export class UsersService {
   async findById(id: string): Promise<User | null> {
     return this.UserRepo.findOne({
       where: { id },
-      relations: ['roles', 'realm'],
+      relations: ['roles', 'roles.permissions', 'realm'],
     });
   }
 

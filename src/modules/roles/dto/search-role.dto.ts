@@ -9,12 +9,12 @@ export class SearchRoleDto {
     example: 'ADMIN',
   })
   @IsString()
-  name: string;
+  name!: string;
 
   @ApiProperty({
     name: 'page',
     required: false,
-    example: 0,
+    example: 1,
   })
   @IsOptional()
   @Type(() => Number)

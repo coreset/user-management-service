@@ -10,12 +10,12 @@ import {
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { UserAttributesService } from './user-attributes.service';
 import { SetAttributeDto } from './dto/set-attribute.dto';
-import { FixedUserRole } from '../roles/enums/role.enum';
-import { Roles } from '../roles/decorators/roles.decorator';
+import { Permissions } from '../permission/decorators/permissions.decorator';
+import { PermissionKey } from '../permission/constants/permission-key.enum';
 
 @Controller('users/:userId/attributes')
 @ApiBearerAuth('authorization')
-@Roles([FixedUserRole.SUPER_ADMIN, FixedUserRole.REALM_ADMIN])
+@Permissions([PermissionKey.USER_ATTRIBUTES_MANAGE])
 export class UserAttributesController {
   constructor(private readonly userAttributesService: UserAttributesService) {}
 

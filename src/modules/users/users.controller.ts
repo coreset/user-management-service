@@ -15,8 +15,8 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { query } from 'winston';
 import { SearchUserDto } from './dto/search-role.dto';
-import { Roles } from '../roles/decorators/roles.decorator';
-import { FixedUserRole } from '../roles/enums/role.enum';
+import { Permissions } from '../permission/decorators/permissions.decorator';
+import { PermissionKey } from '../permission/constants/permission-key.enum';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 
@@ -25,13 +25,13 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
-  @Roles([FixedUserRole.SUPER_ADMIN, FixedUserRole.ADMIN])
+  @Permissions([PermissionKey.USERS_CREATE])
   @Post()
   create(@Body() createUserDto: CreateUserDto) {
     return this.usersService.create(createUserDto);
   }
 
-  @Roles([FixedUserRole.SUPER_ADMIN])
+  @Permissions([PermissionKey.USERS_READ])
   @Get()
   findAll() {
     return this.usersService.findAll();

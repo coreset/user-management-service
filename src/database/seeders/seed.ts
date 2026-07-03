@@ -2,6 +2,7 @@ import { DataSource } from 'typeorm';
 import { runSeeders } from 'typeorm-extension';
 import dataSourceOptions from '../../config/typeorm.config';
 import { MasterRealmSeeder } from './meta-data/master-realm.seeder';
+import { PermissionsSeeder } from './meta-data/permissions.seeder';
 import { SettingDefinitionsSeeder } from './meta-data/setting-definitions.seeder';
 import { AttributeDefinitionsSeeder } from './meta-data/attribute-definitions.seeder';
 
@@ -17,6 +18,7 @@ import { AttributeDefinitionsSeeder } from './meta-data/attribute-definitions.se
   await runSeeders(dataSource, {
     seeds: [
       MasterRealmSeeder,
+      PermissionsSeeder, // must run after MasterRealmSeeder (needs its roles)
       SettingDefinitionsSeeder,
       AttributeDefinitionsSeeder,
     ],

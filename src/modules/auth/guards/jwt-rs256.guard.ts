@@ -49,7 +49,7 @@ export class JwtRs256Guard implements CanActivate {
     const { kid, realm } = this.readKidAndRealm(token);
     const publicKey = await this.resolvePublicKey(realm, kid);
     const payload = this.verify(token, publicKey);
-
+    console.log("request payload >>>", payload);
     const user = await this.authService.validateUserRole(payload.sub);
     if (!user) {
       throw new UnauthorizedException('User not found or not authorized');

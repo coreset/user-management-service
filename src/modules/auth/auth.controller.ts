@@ -19,8 +19,8 @@ import { UpdateAuthDto } from './dto/update-auth.dto';
 import { AuthGuard } from '@nestjs/passport';
 import { LocalLoginDto } from './dto/local-login.dto';
 import { ApiBody, ApiBearerAuth, ApiParam } from '@nestjs/swagger';
-import { FixedUserRole } from '../roles/enums/role.enum';
-import { Roles } from '../roles/decorators/roles.decorator';
+import { Permissions } from '../permission/decorators/permissions.decorator';
+import { PermissionKey } from '../permission/constants/permission-key.enum';
 import { Public } from './decorators/public.decorator';
 import { ChangePasswordDto } from './dto/change-password.dto';
 import { ForgotPasswordDto } from './dto/forgot-password.dto';
@@ -99,7 +99,7 @@ export class AuthController {
     );
   }
 
-  @Roles([FixedUserRole.SUPER_ADMIN, FixedUserRole.ADMIN])
+  @Permissions([PermissionKey.USERS_READ])
   @Get()
   findAll(@Req() req: Request) {
     return this.authService.findAll(req.user.id);
@@ -123,7 +123,7 @@ export class AuthController {
     return this.authService.update(id, updateAuthDto);
   }
 
-  @Roles([FixedUserRole.ADMIN]) // only ADMIN can delete user
+  @Permissions([PermissionKey.USERS_DELETE])
   @Delete(':id')
   remove(@Param('id') id: string) {
     return this.authService.remove(id);

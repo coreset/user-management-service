@@ -16,13 +16,13 @@ import { UpdateClientDto } from './dto/update-client.dto';
 import { CreateClientRoleDto } from './dto/create-client-role.dto';
 import { AssignClientRoleDto } from './dto/assign-client-role.dto';
 import { AssignPermissionsDto } from './dto/assign-permissions.dto';
-import { FixedUserRole } from '../roles/enums/role.enum';
-import { Roles } from '../roles/decorators/roles.decorator';
+import { Permissions } from '../permission/decorators/permissions.decorator';
+import { PermissionKey } from '../permission/constants/permission-key.enum';
 import { AuthRequest } from '../auth/types/request';
 
 @Controller('clients')
 @ApiBearerAuth('authorization')
-@Roles([FixedUserRole.SUPER_ADMIN, FixedUserRole.REALM_ADMIN])
+@Permissions([PermissionKey.CLIENTS_MANAGE])
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 

@@ -10,13 +10,13 @@ import {
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { SettingsService } from './settings.service';
 import { SetSettingDto } from './dto/set-setting.dto';
-import { FixedUserRole } from '../roles/enums/role.enum';
-import { Roles } from '../roles/decorators/roles.decorator';
+import { Permissions } from '../permission/decorators/permissions.decorator';
+import { PermissionKey } from '../permission/constants/permission-key.enum';
 import { AuthRequest } from '../auth/types/request';
 
 @Controller('settings')
 @ApiBearerAuth('authorization')
-@Roles([FixedUserRole.SUPER_ADMIN, FixedUserRole.REALM_ADMIN])
+@Permissions([PermissionKey.SETTINGS_MANAGE])
 export class SettingsController {
   constructor(private readonly settingsService: SettingsService) {}
 

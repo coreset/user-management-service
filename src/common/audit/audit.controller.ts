@@ -8,12 +8,12 @@ import {
 import { ApiBearerAuth } from '@nestjs/swagger';
 import { AuditService } from './audit.service';
 import { AuditLogQueryDto } from './dto/audit-log-query.dto';
-import { FixedUserRole } from '../../modules/roles/enums/role.enum';
-import { Roles } from '../../modules/roles/decorators/roles.decorator';
+import { Permissions } from '../../modules/permission/decorators/permissions.decorator';
+import { PermissionKey } from '../../modules/permission/constants/permission-key.enum';
 
 @Controller('audit-logs')
 @ApiBearerAuth('authorization')
-@Roles([FixedUserRole.SUPER_ADMIN])
+@Permissions([PermissionKey.AUDIT_READ])
 export class AuditController {
   constructor(private readonly auditService: AuditService) {}
 

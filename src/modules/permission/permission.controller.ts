@@ -5,7 +5,7 @@ import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { ApiBearerAuth } from '@nestjs/swagger';
 
 @Controller('permission')
-@ApiBearerAuth('authorization') 
+@ApiBearerAuth('authorization')
 export class PermissionController {
   constructor(private readonly permissionService: PermissionService) {}
 

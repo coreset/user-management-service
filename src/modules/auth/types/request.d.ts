@@ -5,6 +5,8 @@ export interface AuthUser {
   id: string;
   realmId?: string;
   roles?: Array<{ name: string }>;
+  /** Flattened permission names granted by all of the user's roles. */
+  permissions?: string[];
   // Add other properties your JWT/user object contains:
   // email?: string;
 }
