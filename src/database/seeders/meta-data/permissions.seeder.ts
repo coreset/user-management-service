@@ -7,13 +7,20 @@ import { PermissionKey } from '../../../modules/permission/constants/permission-
 
 /**
  * Permissions granted to REALM_ADMIN. SUPER_ADMIN always gets every permission
- * (including REALMS_MANAGE / AUDIT_READ, which REALM_ADMIN does not).
+ * (including REALMS_MANAGE / AUDIT_READ / ROLES_ASSIGN_PERMISSIONS, which
+ * REALM_ADMIN deliberately does not — see PermissionKey.ROLES_ASSIGN_PERMISSIONS'
+ * doc comment: granting it here would let a realm admin attach any permission,
+ * including realm-management ones, to a role in their own realm.
  */
 const REALM_ADMIN_PERMISSIONS: PermissionKey[] = [
   PermissionKey.USERS_CREATE,
   PermissionKey.USERS_READ,
   PermissionKey.USERS_DELETE,
   PermissionKey.ROLES_CREATE,
+  PermissionKey.ROLES_READ,
+  PermissionKey.ROLES_UPDATE,
+  PermissionKey.ROLES_DELETE,
+  PermissionKey.ROLES_ASSIGN_USERS,
   PermissionKey.CLIENTS_MANAGE,
   PermissionKey.SETTINGS_MANAGE,
   PermissionKey.USER_ATTRIBUTES_MANAGE,

@@ -30,7 +30,10 @@ export class Role {
   @Exclude()
   deletedAt: Date;
 
-  @ManyToOne(() => Realm, (realm) => realm.roles, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Realm, (realm) => realm.roles, {
+    onDelete: 'CASCADE',
+    nullable: false,
+  })
   @JoinColumn({ name: 'realm_id' })
   realm!: Realm;
 

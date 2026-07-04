@@ -39,13 +39,13 @@ export class RolesService {
 
   async create(
     createRoleDto: CreateRoleDto,
-    realmId?: string,
+    realmId: string,
   ): Promise<Role | null> {
     try {
       const existing = await this.RoleRepo.findOne({
         where: {
           name: createRoleDto.name,
-          ...(realmId ? { realm: { id: realmId } } : {}),
+          realm: { id: realmId },
         },
         withDeleted: true, // so we also check soft-deleted ones
       });
@@ -70,7 +70,7 @@ export class RolesService {
       // No conflict, proceed to create new
       const newRole = this.RoleRepo.create({
         name: createRoleDto.name,
-        realm: realmId ? ({ id: realmId } as Realm) : undefined,
+        realm: { id: realmId } as Realm,
       });
       const savedRole = await this.RoleRepo.save(newRole);
       this.logger.log(`Role saved successfully: ${savedRole.id}`, RolesService.name);
@@ -92,8 +92,10 @@ export class RolesService {
     });
   }
 
-  async findAllPaginated(page: number, limit: number): Promise<any> {
+  /** Lists roles, optionally filtered by name (substring match). */
+  async findAllPaginated(page: number, limit: number, name?: string): Promise<any> {
     const [items, total] = await this.RoleRepo.findAndCount({
+      where: name ? { name: Like(`%${name}%`) } : {},
       skip: (page - 1) * limit,
       take: limit,
       withDeleted: false,
@@ -105,38 +107,6 @@ export class RolesService {
       page,
       lastPage: Math.ceil(total / limit),
     };
-  }
-
-  async searchAllPaginated(
-    name: string,
-    page: number,
-    limit: number,
-  ): Promise<any> {
-
-    if (name && page && limit) {
-      const [items, total] = await this.RoleRepo.findAndCount({
-        //where: { name },
-        where: { name: Like(`%${name}%`) },
-        skip: (page - 1) * limit,
-        take: limit,
-      });
-
-      return {
-        data: items,
-        total,
-        page,
-        lastPage: Math.ceil(total / limit),
-      };
-
-    } else if (name && !page && !limit) {
-      const item = await this.RoleRepo.find({
-        where: { name },
-      });
-      return item;
-    } else {
-      throw new BadRequestException('Not found correct parameters to search,');
-    }
-
   }
 
   findOne(id: string) {

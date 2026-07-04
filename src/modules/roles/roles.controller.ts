@@ -17,10 +17,9 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 import { Permissions } from '../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../permission/constants/permission-key.enum';
 import { AuthRequest } from '../auth/types/request';
-import { PaginateRoleDto } from './dto/paginate-role.dto';
-import { SearchRoleDto } from './dto/search-role.dto';
-import { AssignUsersDto } from './dto/asign-users.dto';
-import { AssignPermissionsDto } from './dto/asign-permissions.dto';
+import { RoleQueryDto } from './dto/role-query.dto';
+import { AssignUsersDto } from './dto/assign-users.dto';
+import { AssignPermissionsDto } from './dto/assign-permissions.dto';
 
 @Controller('roles')
 @ApiBearerAuth('authorization') // for add authrization header with swagger
@@ -31,73 +30,77 @@ export class RolesController {
   @Permissions([PermissionKey.ROLES_CREATE])
   create(@Req() req: AuthRequest, @Body() createRoleDto: CreateRoleDto) {
     // Realm roles are scoped to the caller's realm.
-    return this.rolesService.create(createRoleDto, req.user.realmId);
+    return this.rolesService.create(createRoleDto, req.user.realmId!);
   }
 
+  // GET /roles — plain list, or filtered with ?name=... (no separate /search route).
+  @Permissions([PermissionKey.ROLES_READ])
   @Get()
-  //@UseGuards(AuthGuard('jwt'))
-  findAll(@Query() { page = 1, limit = 10}: PaginateRoleDto) {
-    return this.rolesService.findAllPaginated(page, limit);
+  findAll(@Query() { name, page = 1, limit = 10 }: RoleQueryDto) {
+    return this.rolesService.findAllPaginated(page, limit, name);
   }
 
-  @Get('search')
-  search(@Query() query: SearchRoleDto) {
-    const { name, page, limit } = query;
-    return this.rolesService.searchAllPaginated(name, page, limit);
-  }
-
+  @Permissions([PermissionKey.ROLES_READ])
   @Get(':id')
   findOne(@Param('id', ParseUUIDPipe) id: string) {
     return this.rolesService.findOne(id);
   }
 
+  @Permissions([PermissionKey.ROLES_UPDATE])
   @Patch(':id')
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateRoleDto: UpdateRoleDto) {
     return this.rolesService.update(id, updateRoleDto);
   }
 
-  //@SetMetadata('role', [FixedUserRole.ADMIN])
-  //@UseGuards(RolesGuard)
-  //@UseGuards(AuthGuard('jwt'))
+  @Permissions([PermissionKey.ROLES_DELETE])
   @Delete(':id')
-  softDelete(@Param('id', ParseUUIDPipe) id: string) {
+  remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.rolesService.softDelete(id);
   }
 
+  @Permissions([PermissionKey.ROLES_DELETE])
   @Post(':id/restore')
   restore(@Param('id', ParseUUIDPipe) id: string) {
     return this.rolesService.restore(id);
   }
 
-  @Post(':roleId/assign-users')
-  assignUsersToRole(
+  // ----- Role <-> Users (nested sub-resource) --------------------------------
+  @Permissions([PermissionKey.ROLES_ASSIGN_USERS])
+  @Post(':roleId/users')
+  addUsers(
     @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() assignUsersDto: AssignUsersDto,
   ) {
     return this.rolesService.assignUsersToRole(roleId, assignUsersDto.userIdList);
   }
 
-  @Post(':roleId/unassign-users')
-  unassignUsersToRole(
+  @Permissions([PermissionKey.ROLES_ASSIGN_USERS])
+  @Delete(':roleId/users/:userId')
+  removeUser(
     @Param('roleId', ParseUUIDPipe) roleId: string,
-    @Body() assignUsersDto: AssignUsersDto,
+    @Param('userId', ParseUUIDPipe) userId: string,
   ) {
-    return this.rolesService.unassignUsersFromRole(roleId, assignUsersDto.userIdList);
+    return this.rolesService.unassignUsersFromRole(roleId, [userId]);
   }
 
-  @Post(':roleId/assign-permissions')
-  assignPermissionsToRole(
+  // ----- Role <-> Permissions (nested sub-resource) --------------------------
+  // ROLES_ASSIGN_PERMISSIONS is deliberately SUPER_ADMIN-only — see the enum's
+  // doc comment for the privilege-escalation risk of granting it to REALM_ADMIN.
+  @Permissions([PermissionKey.ROLES_ASSIGN_PERMISSIONS])
+  @Post(':roleId/permissions')
+  addPermissions(
     @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() assignPermissionsDto: AssignPermissionsDto,
   ) {
     return this.rolesService.assignPermissionsToRole(roleId, assignPermissionsDto.permissionIdList);
   }
 
-  @Post(':roleId/unassign-permissions')
-  unassignPermissionsToRole(
+  @Permissions([PermissionKey.ROLES_ASSIGN_PERMISSIONS])
+  @Delete(':roleId/permissions/:permissionId')
+  removePermission(
     @Param('roleId', ParseUUIDPipe) roleId: string,
-    @Body() assignPermissionsDto: AssignPermissionsDto,
+    @Param('permissionId', ParseUUIDPipe) permissionId: string,
   ) {
-    return this.rolesService.unassignPermissionsFromRole(roleId, assignPermissionsDto.permissionIdList);
+    return this.rolesService.unassignPermissionsFromRole(roleId, [permissionId]);
   }
 }

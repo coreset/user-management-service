@@ -2,14 +2,16 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { IsInt, IsOptional, IsString, Min } from 'class-validator';
 
-export class SearchRoleDto {
+/** Query params for GET /roles — optional `name` filters, otherwise lists all. */
+export class RoleQueryDto {
   @ApiProperty({
     name: 'name',
-    required: true,
+    required: false,
     example: 'ADMIN',
   })
+  @IsOptional()
   @IsString()
-  name!: string;
+  name?: string;
 
   @ApiProperty({
     name: 'page',
