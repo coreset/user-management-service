@@ -17,7 +17,7 @@ import { AccessToken } from '../../auth/entities/access-token.entity';
 import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 import { UserVerificationIdentifier } from '../../auth/entities/user-verification-identifier.entity';
 import * as bcrypt from 'bcrypt';
-import { Role } from 'src/modules/roles/entities/role.entity';
+import { RealmRole } from 'src/modules/roles/entities/role.entity';
 import { Realm } from 'src/modules/realms/entities/realm.entity';
 import { Exclude } from 'class-transformer';
 import { Audited } from '../../../common/audit/audited.decorator';
@@ -86,8 +86,8 @@ export class User {
    * user-1 and user-2 can have 'EDITOR' role.
    **/
 
-  @ManyToMany(() => Role, (role) => role.users, { cascade: true })
-  roles: Role[];
+  @ManyToMany(() => RealmRole, (role) => role.users, { cascade: true })
+  roles: RealmRole[];
 
   @CreateDateColumn({ name: 'created_at'})
   createdAt: Date;

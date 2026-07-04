@@ -19,7 +19,7 @@ import { Audited } from '../../../common/audit/audited.decorator';
 @Audited()
 @Entity('realm_roles')
 @Unique(['realm', 'name'])
-export class Role {
+export class RealmRole {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 

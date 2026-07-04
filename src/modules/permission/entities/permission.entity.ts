@@ -5,7 +5,7 @@ import {
   ManyToMany,
   DeleteDateColumn,
 } from 'typeorm';
-import { Role } from 'src/modules/roles/entities/role.entity';
+import { RealmRole } from 'src/modules/roles/entities/role.entity';
 import { Exclude } from 'class-transformer';
 import { Audited } from '../../../common/audit/audited.decorator';
 
@@ -22,6 +22,6 @@ export class Permission {
   @Exclude()
   deletedAt: Date;
 
-  @ManyToMany(() => Role, (role) => role.permissions)
-  roles: Role[];
+  @ManyToMany(() => RealmRole, (role) => role.permissions)
+  roles: RealmRole[];
 }

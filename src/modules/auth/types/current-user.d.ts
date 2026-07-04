@@ -1,9 +1,9 @@
-import { Role } from 'src/modules/roles/entities/role.entity';
+import { RealmRole } from 'src/modules/roles/entities/role.entity';
 
 export type CurrentUser = {
   id: string;
   realmId?: string;
-  roles: Array<Role>;
+  roles: Array<RealmRole>;
   /** Flattened permission names granted by all of the user's roles. */
   permissions: string[];
 };

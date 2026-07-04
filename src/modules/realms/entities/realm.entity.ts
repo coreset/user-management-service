@@ -9,7 +9,7 @@ import {
 import { RealmKey } from './realm-key.entity';
 import { User } from '../../users/entities/user.entity';
 import { Client } from '../../clients/entities/client.entity';
-import { Role } from '../../roles/entities/role.entity';
+import { RealmRole } from '../../roles/entities/role.entity';
 import { Audited } from '../../../common/audit/audited.decorator';
 
 @Audited()
@@ -42,6 +42,6 @@ export class Realm {
   @OneToMany(() => Client, (client) => client.realm)
   clients: Client[];
 
-  @OneToMany(() => Role, (role) => role.realm)
-  roles: Role[];
+  @OneToMany(() => RealmRole, (role) => role.realm)
+  roles: RealmRole[];
 }

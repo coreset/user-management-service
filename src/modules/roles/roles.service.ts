@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, InternalServerError
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Role } from './entities/role.entity';
+import { RealmRole } from './entities/role.entity';
 import { In, Like, QueryFailedError, Repository, UpdateResult } from 'typeorm';
 import { AppLoggerService } from 'src/common/logger/logger.service';
 import { UsersService } from '../users/users.service';
@@ -14,14 +14,14 @@ import { Realm } from '../realms/entities/realm.entity';
 @Injectable()
 export class RolesService {
   constructor(
-    @InjectRepository(Role)
-    private readonly RoleRepo: Repository<Role>,
+    @InjectRepository(RealmRole)
+    private readonly RoleRepo: Repository<RealmRole>,
     private readonly logger: AppLoggerService,
     private readonly usersService: UsersService,
     private readonly permissionService: PermissionService,
   ) {}
 
-  //async create(createRoleDto: CreateRoleDto): Promise<Role | null> {
+  //async create(createRoleDto: CreateRoleDto): Promise<RealmRole | null> {
   //  const role = this.RoleRepo.create(createRoleDto);
   //  try {
   //    const savedRole = await this.RoleRepo.save(role);
@@ -40,7 +40,7 @@ export class RolesService {
   async create(
     createRoleDto: CreateRoleDto,
     realmId: string,
-  ): Promise<Role | null> {
+  ): Promise<RealmRole | null> {
     try {
       const existing = await this.RoleRepo.findOne({
         where: {
@@ -186,10 +186,10 @@ export class RolesService {
   }
 
   async assignUsersToRole(roleId: string, userIdList: string[]) {
-    const role: Role = (await this.RoleRepo.findOne({
+    const role: RealmRole = (await this.RoleRepo.findOne({
       where: { id: roleId },
       relations: ['users'],
-    })) as Role;
+    })) as RealmRole;
 
     if (!role) {
       this.logger.warn(
@@ -229,10 +229,10 @@ export class RolesService {
   }
 
   async assignPermissionsToRole(roleId: string, permissionIdList: string[]) {
-    const role: Role = (await this.RoleRepo.findOne({
+    const role: RealmRole = (await this.RoleRepo.findOne({
       where: { id: roleId },
       relations: ['permissions'],
-    })) as Role;
+    })) as RealmRole;
 
     if (!role) {
       this.logger.warn(
@@ -272,10 +272,10 @@ export class RolesService {
   }
 
   async unassignUsersFromRole(roleId: string, userIdList: string[]) {
-    const role: Role = (await this.RoleRepo.findOne({
+    const role: RealmRole = (await this.RoleRepo.findOne({
       where: { id: roleId },
       relations: ['users'],
-    })) as Role;
+    })) as RealmRole;
 
     if (!role) {
       this.logger.warn(
@@ -318,10 +318,10 @@ export class RolesService {
   }
 
   async unassignPermissionsFromRole(roleId: string, permissionIdList: string[]) {
-    const role: Role = (await this.RoleRepo.findOne({
+    const role: RealmRole = (await this.RoleRepo.findOne({
       where: { id: roleId },
       relations: ['permissions'],
-    })) as Role;
+    })) as RealmRole;
 
     if (!role) {
       this.logger.warn(

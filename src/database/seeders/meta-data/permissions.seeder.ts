@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
 import { Seeder } from 'typeorm-extension';
 import { Permission } from '../../../modules/permission/entities/permission.entity';
-import { Role } from '../../../modules/roles/entities/role.entity';
+import { RealmRole } from '../../../modules/roles/entities/role.entity';
 import { FixedUserRole } from '../../../modules/roles/enums/role.enum';
 import { PermissionKey } from '../../../modules/permission/constants/permission-key.enum';
 
@@ -38,7 +38,7 @@ const REALM_ADMIN_PERMISSIONS: PermissionKey[] = [
 export class PermissionsSeeder implements Seeder {
   async run(dataSource: DataSource): Promise<void> {
     const permissionRepo = dataSource.getRepository(Permission);
-    const roleRepo = dataSource.getRepository(Role);
+    const roleRepo = dataSource.getRepository(RealmRole);
 
     // 1. Ensure every permission key exists as a row -------------------------
     const allKeys = Object.values(PermissionKey);
