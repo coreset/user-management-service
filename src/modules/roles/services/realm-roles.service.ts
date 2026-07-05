@@ -1,19 +1,19 @@
 import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { CreateRoleDto } from './dto/create-role.dto';
-import { UpdateRoleDto } from './dto/update-role.dto';
+import { CreateRoleDto } from '../dto/create-role.dto';
+import { UpdateRoleDto } from '../dto/update-role.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { RealmRole } from './entities/realm-role.entity';
-import { UserRealmRole } from './entities/user-realm-role.entity';
+import { RealmRole } from '../entities/realm-role.entity';
+import { UserRealmRole } from '../entities/user-realm-role.entity';
 import { In, Like, QueryFailedError, Repository, UpdateResult } from 'typeorm';
 import { AppLoggerService } from 'src/common/logger/logger.service';
-import { UsersService } from '../users/users.service';
-import { User } from '../users/entities/user.entity';
-import { PermissionService } from '../permission/permission.service';
-import { Permission } from '../permission/entities/permission.entity';
-import { Realm } from '../realms/entities/realm.entity';
+import { UsersService } from '../../users/users.service';
+import { User } from '../../users/entities/user.entity';
+import { PermissionService } from '../../permission/permission.service';
+import { Permission } from '../../permission/entities/permission.entity';
+import { Realm } from '../../realms/entities/realm.entity';
 
 @Injectable()
-export class RolesService {
+export class RealmRolesService {
   constructor(
     @InjectRepository(RealmRole)
     private readonly RoleRepo: Repository<RealmRole>,
@@ -55,17 +55,17 @@ export class RolesService {
 
       if (existing) {
         if (existing.deletedAt) {
-          this.logger.warn(`Restoring soft-deleted role: ${createRoleDto.name}`, RolesService.name);
+          this.logger.warn(`Restoring soft-deleted role: ${createRoleDto.name}`, RealmRolesService.name);
           // Restore the soft-deleted record
           await this.RoleRepo.restore(existing.id);
 
           // Optionally update other fields
           const updated = this.RoleRepo.merge(existing, createRoleDto);
           const restoredRole = await this.RoleRepo.save(updated);
-          this.logger.log(`Role restored successfully: ${restoredRole.id}`, RolesService.name);
+          this.logger.log(`Role restored successfully: ${restoredRole.id}`, RealmRolesService.name);
           return restoredRole;
         } else {
-          this.logger.warn(`Attempt to create duplicate role: ${createRoleDto.name}`, RolesService.name);
+          this.logger.warn(`Attempt to create duplicate role: ${createRoleDto.name}`, RealmRolesService.name);
           throw new ConflictException(`Role with this name ${createRoleDto.name} already exists`);
         }
       }
@@ -76,11 +76,11 @@ export class RolesService {
         realm: { id: realmId } as Realm,
       });
       const savedRole = await this.RoleRepo.save(newRole);
-      this.logger.log(`Role saved successfully: ${savedRole.id}`, RolesService.name);
+      this.logger.log(`Role saved successfully: ${savedRole.id}`, RealmRolesService.name);
       return savedRole;
     } catch (error) {
       // You can add custom error handling here
-      this.logger.error(`Failed to create role: ${error.message}`, RolesService.name);
+      this.logger.error(`Failed to create role: ${error.message}`, RealmRolesService.name);
       if (error instanceof ConflictException) {
         throw error;
       }
@@ -135,12 +135,12 @@ export class RolesService {
     });
 
     if (!role) {
-      this.logger.warn(`Role with id ${id} not found`, RolesService.name);
+      this.logger.warn(`Role with id ${id} not found`, RealmRolesService.name);
       throw new NotFoundException(`Role with id ${id} not found`);
     }
 
     if (role.deletedAt) {
-      this.logger.warn(`Role with id ${id} is already deleted`, RolesService.name);
+      this.logger.warn(`Role with id ${id} is already deleted`, RealmRolesService.name);
       throw new ConflictException(`Role with id ${id} is already deleted`);
     }
 
@@ -148,7 +148,7 @@ export class RolesService {
      * TypeORM's softDelete and restore do not check the current status
     * */
     await this.RoleRepo.softDelete(id);
-    this.logger.warn(`Role with id ${id} successfully deleted`, RolesService.name);
+    this.logger.warn(`Role with id ${id} successfully deleted`, RealmRolesService.name);
   }
 
   //async restore(id: number): Promise<void> {
@@ -166,12 +166,12 @@ export class RolesService {
     });
 
     if (!role) {
-      this.logger.warn(`Role with id ${id} not found`, RolesService.name);
+      this.logger.warn(`Role with id ${id} not found`, RealmRolesService.name);
       throw new NotFoundException(`Role with id ${id} not found`);
     }
 
     if (!role.deletedAt) {
-      this.logger.warn(`Role with id ${id} is not deleted`, RolesService.name);
+      this.logger.warn(`Role with id ${id} is not deleted`, RealmRolesService.name);
       throw new ConflictException(`Role with id ${id} is not deleted`);
     }
 
@@ -179,7 +179,7 @@ export class RolesService {
      * TypeORM's softDelete and restore do not check the current status
     * */
     await this.RoleRepo.restore(id);
-    this.logger.log(`Role with id ${id} successfully restored`, RolesService.name);
+    this.logger.log(`Role with id ${id} successfully restored`, RealmRolesService.name);
   }
 
   findByIdList(idList: string[]): Promise<any> {
@@ -197,7 +197,7 @@ export class RolesService {
     if (!role) {
       this.logger.warn(
         `Role id ${roleId} not found from the database`,
-        RolesService.name,
+        RealmRolesService.name,
       );
       throw new NotFoundException(`Role with id ${roleId} not found`);
     }
@@ -210,7 +210,7 @@ export class RolesService {
     if (missingIds.length > 0) {
       this.logger.warn(
         `Users with id ${missingIds.toString()} not found`,
-        RolesService.name,
+        RealmRolesService.name,
       );
       throw new BadRequestException(
         `Users not found for IDs: ${missingIds.join(', ')}`,
@@ -233,7 +233,7 @@ export class RolesService {
 
     this.logger.log(
       `Users with id ${foundIds.toString()} assign successfully`,
-      RolesService.name,
+      RealmRolesService.name,
     );
 
     return {
@@ -252,7 +252,7 @@ export class RolesService {
     if (!role) {
       this.logger.warn(
         `Role id ${roleId} not found from the database`,
-        RolesService.name,
+        RealmRolesService.name,
       );
       throw new NotFoundException(`Role with id ${roleId} not found`);
     }
@@ -265,7 +265,7 @@ export class RolesService {
     if (missingIds.length > 0) {
       this.logger.warn(
         `Permissions with id ${missingIds.toString()} not found`,
-        RolesService.name,
+        RealmRolesService.name,
       );
       throw new BadRequestException(
         `Permissions not found for IDs: ${missingIds.join(', ')}`,
@@ -276,7 +276,7 @@ export class RolesService {
     await this.RoleRepo.save(role);
     this.logger.log(
       `Permissions with id ${foundIds.toString()} assign successfully`,
-      RolesService.name,
+      RealmRolesService.name,
     );
 
     return {
@@ -294,7 +294,7 @@ export class RolesService {
     if (!role) {
       this.logger.warn(
         `Role id ${roleId} not found from the database`,
-        RolesService.name,
+        RealmRolesService.name,
       );
       throw new NotFoundException(`Role with id ${roleId} not found`);
     }
@@ -307,7 +307,7 @@ export class RolesService {
     if (missingIds.length > 0) {
       this.logger.warn(
         `Users with id ${missingIds.toString()} not found`,
-        RolesService.name,
+        RealmRolesService.name,
       );
       throw new BadRequestException(
         `Users not found for IDs: ${missingIds.join(', ')}`,
@@ -322,7 +322,7 @@ export class RolesService {
 
     this.logger.log(
       `Users with id ${foundIds.toString()} unassigned successfully from role ${roleId}`,
-      RolesService.name,
+      RealmRolesService.name,
     );
 
     return {
@@ -341,7 +341,7 @@ export class RolesService {
     if (!role) {
       this.logger.warn(
         `Role id ${roleId} not found from the database`,
-        RolesService.name,
+        RealmRolesService.name,
       );
       throw new NotFoundException(`Role with id ${roleId} not found`);
     }
@@ -354,7 +354,7 @@ export class RolesService {
     if (missingIds.length > 0) {
       this.logger.warn(
         `Permissions with id ${missingIds.toString()} not found`,
-        RolesService.name,
+        RealmRolesService.name,
       );
       throw new BadRequestException(
         `Permissions not found for IDs: ${missingIds.join(', ')}`,
@@ -368,7 +368,7 @@ export class RolesService {
 
     this.logger.log(
       `Permissions with id ${foundIds.toString()} unassigned successfully from role ${roleId}`,
-      RolesService.name,
+      RealmRolesService.name,
     );
 
     return {
