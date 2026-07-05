@@ -7,7 +7,7 @@ import { PermissionKey } from '../../../modules/permission/constants/permission-
 
 /**
  * Permissions granted to REALM_ADMIN. SUPER_ADMIN always gets every permission
- * (including REALMS_MANAGE / AUDIT_READ / ROLES_ASSIGN_PERMISSIONS, which
+ * (including the realms:* CRUD keys / AUDIT_READ / ROLES_ASSIGN_PERMISSIONS, which
  * REALM_ADMIN deliberately does not — see PermissionKey.ROLES_ASSIGN_PERMISSIONS'
  * doc comment: granting it here would let a realm admin attach any permission,
  * including realm-management ones, to a role in their own realm.
@@ -21,7 +21,18 @@ const REALM_ADMIN_PERMISSIONS: PermissionKey[] = [
   PermissionKey.ROLES_UPDATE,
   PermissionKey.ROLES_DELETE,
   PermissionKey.ROLES_ASSIGN_USERS,
-  PermissionKey.CLIENTS_MANAGE,
+  PermissionKey.CLIENTS_CREATE,
+  PermissionKey.CLIENTS_READ,
+  PermissionKey.CLIENTS_UPDATE,
+  PermissionKey.CLIENTS_DELETE,
+  PermissionKey.CLIENT_ROLES_CREATE,
+  PermissionKey.CLIENT_ROLES_READ,
+  PermissionKey.CLIENT_ROLES_DELETE,
+  PermissionKey.CLIENT_ROLES_ASSIGN_USERS,
+  // CLIENT_ROLES_ASSIGN_PERMISSIONS intentionally omitted (SUPER_ADMIN-only):
+  // client-role permissions are flattened into a user's effective permissions,
+  // so granting it would let a realm admin escalate — same reasoning as
+  // ROLES_ASSIGN_PERMISSIONS.
   PermissionKey.SETTINGS_MANAGE,
   PermissionKey.USER_ATTRIBUTES_MANAGE,
 ];

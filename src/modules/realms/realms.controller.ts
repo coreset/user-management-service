@@ -8,7 +8,7 @@ import {
   Delete,
   ParseUUIDPipe,
 } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { RealmsService } from './realms.service';
 import { CreateRealmDto } from './dto/create-realm.dto';
 import { UpdateRealmDto } from './dto/update-realm.dto';
@@ -17,25 +17,34 @@ import { PermissionKey } from '../permission/constants/permission-key.enum';
 
 @Controller('realms')
 @ApiBearerAuth('authorization')
-@Permissions([PermissionKey.REALMS_MANAGE])
 export class RealmsController {
   constructor(private readonly realmsService: RealmsService) {}
 
+  @Permissions([PermissionKey.REALMS_CREATE])
   @Post()
   create(@Body() createRealmDto: CreateRealmDto) {
     return this.realmsService.create(createRealmDto);
   }
 
+  @Permissions([PermissionKey.REALMS_READ])
   @Get()
   findAll() {
     return this.realmsService.findAll();
   }
 
-  @Get(':id')
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.realmsService.findOne(id);
+  @Permissions([PermissionKey.REALMS_READ])
+  @Get(':realmName')
+  @ApiParam({
+    name: 'realmName',
+    required: true,
+    example: 'master',
+    description: 'Name of the realm to fetch',
+  })
+  findOne(@Param('realmName') realmName: string) {
+    return this.realmsService.findByName(realmName);
   }
 
+  @Permissions([PermissionKey.REALMS_UPDATE])
   @Patch(':id')
   update(
     @Param('id', ParseUUIDPipe) id: string,
@@ -44,6 +53,7 @@ export class RealmsController {
     return this.realmsService.update(id, updateRealmDto);
   }
 
+  @Permissions([PermissionKey.REALMS_DELETE])
   @Delete(':id')
   remove(@Param('id', ParseUUIDPipe) id: string) {
     return this.realmsService.remove(id);

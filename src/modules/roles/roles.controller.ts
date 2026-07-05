@@ -26,8 +26,8 @@ import { AssignPermissionsDto } from './dto/assign-permissions.dto';
 export class RolesController {
   constructor(private readonly rolesService: RolesService) {}
 
-  @Post()
   @Permissions([PermissionKey.ROLES_CREATE])
+  @Post()
   create(@Req() req: AuthRequest, @Body() createRoleDto: CreateRoleDto) {
     // Realm roles are scoped to the caller's realm.
     return this.rolesService.create(createRoleDto, req.user.realmId!);

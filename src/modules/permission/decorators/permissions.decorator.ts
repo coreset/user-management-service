@@ -9,7 +9,7 @@ export const PERMISSIONS_KEY = 'permissions';
  * permissions. Pair with the globally-registered PermissionsGuard.
  *
  * @example
- *   @Permissions([PermissionKey.REALMS_MANAGE])
+ *   @Permissions([PermissionKey.REALMS_READ])
  *   @Get()
  *   findAll() { ... }
  */

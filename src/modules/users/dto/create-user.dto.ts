@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, IsUrl, IsOptional, IsUUID, IsEmpty, MinLength, MaxLength, Matches, IsNotEmpty } from 'class-validator';
+import { IsEmail, IsString, IsUrl, IsOptional, MinLength, MaxLength, Matches, IsNotEmpty } from 'class-validator';
 
 
 const NAME_REGEX = /^[a-zA-ZÀ-ÖØ-öø-ÿ\s'-]+$/;
@@ -24,26 +24,12 @@ export class CreateUserDto {
   username?: string;
 
   @ApiProperty({
-    name: 'Organization',
-    required: true,
-    example: '7aed8708-8b30-4d0b-a80a-a1f516088078',
-    description: 'Realm the user belongs to',
-  })
-  @IsString()
-  @IsUUID()
-  /**
-   * @Description 
-   * UUID of realm that already registered 
-   */
-  realmId!: string;
-
-  @ApiProperty({
-    name: 'First name',
+    name: 'firstName',
     required: true,
     example: 'Samadhi'
   })
   @IsString()
-  @IsEmpty()
+  @IsNotEmpty()
   @MinLength(2)
   @MaxLength(50)
   @Matches(NAME_REGEX, {
@@ -52,7 +38,7 @@ export class CreateUserDto {
   firstName!: string;
 
   @ApiProperty({
-    name: 'First name',
+    name: 'lastName',
     required: true,
     example: 'Samadhi'
   })
@@ -75,7 +61,7 @@ export class CreateUserDto {
   email!: string;
 
   @ApiProperty({
-    name: 'Avatar URL',
+    name: 'avatarUrl',
     required: false,
     example: 'https://i.pravatar.cc/300'
   })

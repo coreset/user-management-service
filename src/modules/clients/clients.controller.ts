@@ -22,27 +22,30 @@ import { AuthRequest } from '../auth/types/request';
 
 @Controller('clients')
 @ApiBearerAuth('authorization')
-@Permissions([PermissionKey.CLIENTS_MANAGE])
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 
   // ----- Clients -------------------------------------------------------------
 
+  @Permissions([PermissionKey.CLIENTS_CREATE])
   @Post()
   create(@Req() req: AuthRequest, @Body() createClientDto: CreateClientDto) {
     return this.clientsService.create(req.user.realmId!, createClientDto);
   }
 
+  @Permissions([PermissionKey.CLIENTS_READ])
   @Get()
   findAll(@Req() req: AuthRequest) {
     return this.clientsService.findAll(req.user.realmId!);
   }
 
+  @Permissions([PermissionKey.CLIENTS_READ])
   @Get(':id')
   findOne(@Req() req: AuthRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.clientsService.findOne(req.user.realmId!, id);
   }
 
+  @Permissions([PermissionKey.CLIENTS_UPDATE])
   @Patch(':id')
   update(
     @Req() req: AuthRequest,
@@ -52,6 +55,7 @@ export class ClientsController {
     return this.clientsService.update(req.user.realmId!, id, updateClientDto);
   }
 
+  @Permissions([PermissionKey.CLIENTS_DELETE])
   @Delete(':id')
   remove(@Req() req: AuthRequest, @Param('id', ParseUUIDPipe) id: string) {
     return this.clientsService.remove(req.user.realmId!, id);
@@ -59,6 +63,7 @@ export class ClientsController {
 
   // ----- Client roles --------------------------------------------------------
 
+  @Permissions([PermissionKey.CLIENT_ROLES_CREATE])
   @Post(':id/roles')
   createClientRole(
     @Req() req: AuthRequest,
@@ -68,6 +73,7 @@ export class ClientsController {
     return this.clientsService.createClientRole(req.user.realmId!, id, dto);
   }
 
+  @Permissions([PermissionKey.CLIENT_ROLES_READ])
   @Get(':id/roles')
   listClientRoles(
     @Req() req: AuthRequest,
@@ -76,6 +82,7 @@ export class ClientsController {
     return this.clientsService.listClientRoles(req.user.realmId!, id);
   }
 
+  @Permissions([PermissionKey.CLIENT_ROLES_DELETE])
   @Delete('roles/:clientRoleId')
   deleteClientRole(
     @Param('clientRoleId', ParseUUIDPipe) clientRoleId: string,
@@ -85,6 +92,7 @@ export class ClientsController {
 
   // ----- User <-> client role assignment ------------------------------------
 
+  @Permissions([PermissionKey.CLIENT_ROLES_ASSIGN_USERS])
   @Post(':id/assign-role')
   assignClientRoleToUser(
     @Req() req: AuthRequest,
@@ -99,6 +107,7 @@ export class ClientsController {
     );
   }
 
+  @Permissions([PermissionKey.CLIENT_ROLES_ASSIGN_USERS])
   @Post('unassign-role')
   unassignClientRoleFromUser(@Body() dto: AssignClientRoleDto) {
     return this.clientsService.unassignClientRoleFromUser(
@@ -109,6 +118,7 @@ export class ClientsController {
 
   // ----- Client role <-> permission assignment ------------------------------
 
+  @Permissions([PermissionKey.CLIENT_ROLES_ASSIGN_PERMISSIONS])
   @Post(':id/roles/:clientRoleId/permissions')
   addClientRolePermissions(
     @Req() req: AuthRequest,
@@ -124,6 +134,7 @@ export class ClientsController {
     );
   }
 
+  @Permissions([PermissionKey.CLIENT_ROLES_READ])
   @Get(':id/roles/:clientRoleId/permissions')
   listClientRolePermissions(
     @Req() req: AuthRequest,
@@ -137,6 +148,7 @@ export class ClientsController {
     );
   }
 
+  @Permissions([PermissionKey.CLIENT_ROLES_ASSIGN_PERMISSIONS])
   @Delete(':id/roles/:clientRoleId/permissions/:permissionId')
   removeClientRolePermission(
     @Req() req: AuthRequest,

@@ -21,16 +21,10 @@ export class UsersService {
     @InjectRepository(User) private UserRepo: Repository<User>
   ) {}
 
-  //async create(createUserDto: CreateUserDto) {
-  //  const user = this.UserRepo.create(createUserDto);
-  //  return await this.UserRepo.save(user);
-  //}
-
-  async create(createUserDto: CreateUserDto): Promise<User> {
-
-    const realm = await this.realmsService.findOne(createUserDto.realmId);
+  async create(createUserDto: CreateUserDto, realmName: string): Promise<User> {
+    const realm = await this.realmsService.findByName(realmName);
     if (!realm) {
-      throw new NotFoundException('Organization(realm) ID not found');
+      throw new NotFoundException(`Realm '${realmName}' not found`);
     }
     const user = this.UserRepo.create({
       username: createUserDto.username ?? createUserDto.email,

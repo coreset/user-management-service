@@ -17,7 +17,7 @@ import { query } from 'winston';
 import { SearchUserDto } from './dto/search-role.dto';
 import { Permissions } from '../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../permission/constants/permission-key.enum';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 
 
 @Controller('users')
@@ -25,10 +25,22 @@ import { ApiBearerAuth } from '@nestjs/swagger';
 export class UsersController {
   constructor(private readonly usersService: UsersService) {}
 
+  /**
+   * @see
+   */
   @Permissions([PermissionKey.USERS_CREATE])
-  @Post()
-  create(@Body() createUserDto: CreateUserDto) {
-    return this.usersService.create(createUserDto);
+  @Post(':realmName')
+  @ApiParam({
+    name: 'realmName',
+    required: true,
+    example: 'master',
+    description: 'Name of the realm the user will belong to',
+  })
+  create(
+    @Param('realmName') realmName: string,
+    @Body() createUserDto: CreateUserDto,
+  ) {
+    return this.usersService.create(createUserDto, realmName);
   }
 
   @Permissions([PermissionKey.USERS_READ])

@@ -24,6 +24,15 @@ export class PermissionsGuard implements CanActivate {
     }
 
     const request = context.switchToHttp().getRequest();
+
+    // Route path params (available in guards once the route is matched).
+    const { realmName, clientName } = request.params ?? {};
+    if (realmName || clientName) {
+      console.log(
+        `[PermissionsGuard] realmName=${realmName ?? '-'}, clientName=${clientName ?? '-'}`,
+      );
+    }
+
     const userPermissions: string[] | undefined = request.user?.permissions;
     if (!userPermissions || userPermissions.length === 0) {
       return false;
