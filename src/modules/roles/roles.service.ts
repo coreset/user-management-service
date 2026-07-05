@@ -3,6 +3,7 @@ import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RealmRole } from './entities/realm-role.entity';
+import { UserRealmRole } from './entities/user-realm-role.entity';
 import { In, Like, QueryFailedError, Repository, UpdateResult } from 'typeorm';
 import { AppLoggerService } from 'src/common/logger/logger.service';
 import { UsersService } from '../users/users.service';
@@ -16,6 +17,8 @@ export class RolesService {
   constructor(
     @InjectRepository(RealmRole)
     private readonly RoleRepo: Repository<RealmRole>,
+    @InjectRepository(UserRealmRole)
+    private readonly UserRealmRoleRepo: Repository<UserRealmRole>,
     private readonly logger: AppLoggerService,
     private readonly usersService: UsersService,
     private readonly permissionService: PermissionService,
@@ -188,7 +191,7 @@ export class RolesService {
   async assignUsersToRole(roleId: string, userIdList: string[]) {
     const role: RealmRole = (await this.RoleRepo.findOne({
       where: { id: roleId },
-      relations: ['users'],
+      relations: ['realm'],
     })) as RealmRole;
 
     if (!role) {
@@ -214,8 +217,20 @@ export class RolesService {
       );
     }
 
-    role.users = [...role.users, ...usersToAdd]; // merge usersToAdd
-    await this.RoleRepo.save(role);
+    // Skip users already assigned to this role (unique (user, realmRole)).
+    const existing: UserRealmRole[] = await this.UserRealmRoleRepo.find({
+      where: { realmRole: { id: roleId }, user: { id: In(foundIds) } },
+      relations: ['user'],
+    });
+    const alreadyAssigned = new Set(existing.map((urr) => urr.user.id));
+
+    const newAssignments: UserRealmRole[] = usersToAdd
+      .filter((user) => !alreadyAssigned.has(user.id))
+      .map((user) =>
+        this.UserRealmRoleRepo.create({ user, realm: role.realm, realmRole: role }),
+      );
+    await this.UserRealmRoleRepo.save(newAssignments);
+
     this.logger.log(
       `Users with id ${foundIds.toString()} assign successfully`,
       RolesService.name,
@@ -274,7 +289,6 @@ export class RolesService {
   async unassignUsersFromRole(roleId: string, userIdList: string[]) {
     const role: RealmRole = (await this.RoleRepo.findOne({
       where: { id: roleId },
-      relations: ['users'],
     })) as RealmRole;
 
     if (!role) {
@@ -300,10 +314,11 @@ export class RolesService {
       );
     }
 
-    // Filter out users to be removed
-    role.users = role.users.filter((user) => !foundIds.includes(user.id));
-
-    await this.RoleRepo.save(role);
+    // Delete the join rows linking these users to this realm role.
+    await this.UserRealmRoleRepo.delete({
+      realmRole: { id: roleId },
+      user: { id: In(foundIds) },
+    });
 
     this.logger.log(
       `Users with id ${foundIds.toString()} unassigned successfully from role ${roleId}`,

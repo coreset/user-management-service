@@ -3,6 +3,7 @@ import { Seeder } from 'typeorm-extension';
 import { Realm } from '../../../modules/realms/entities/realm.entity';
 import { RealmKey } from '../../../modules/realms/entities/realm-key.entity';
 import { RealmRole } from '../../../modules/roles/entities/realm-role.entity';
+import { UserRealmRole } from '../../../modules/roles/entities/user-realm-role.entity';
 import { User } from '../../../modules/users/entities/user.entity';
 import { FixedUserRole } from '../../../modules/roles/enums/role.enum';
 import { generateRealmKeyPair } from '../../../common/utils/rsa-key.util';
@@ -13,6 +14,7 @@ export class MasterRealmSeeder implements Seeder {
     const realmKeyRepo = dataSource.getRepository(RealmKey);
     const roleRepo = dataSource.getRepository(RealmRole);
     const userRepo = dataSource.getRepository(User);
+    const userRealmRoleRepo = dataSource.getRepository(UserRealmRole);
 
     const masterRealmName = process.env.MASTER_REALM_NAME || 'master';
     const superAdminEmail =
@@ -74,7 +76,7 @@ export class MasterRealmSeeder implements Seeder {
       where: { email: superAdminEmail },
     });
     if (!existingUser) {
-      await userRepo.save(
+      const superAdminUser = await userRepo.save(
         userRepo.create({
           username: superAdminUsername,
           email: superAdminEmail,
@@ -84,7 +86,15 @@ export class MasterRealmSeeder implements Seeder {
           lastName: 'Admin',
           isActive: true,
           realm: masterRealm,
-          realmRoles: [superAdminRole],
+        }),
+      );
+
+      // Assign the SUPER_ADMIN realm role via the user_realm_roles join entity.
+      await userRealmRoleRepo.save(
+        userRealmRoleRepo.create({
+          user: superAdminUser,
+          realm: masterRealm,
+          realmRole: superAdminRole,
         }),
       );
       console.log(`Super admin user '${superAdminEmail}' created`);

@@ -49,9 +49,11 @@ export class ClientRole {
   @OneToMany(() => UserClientRole, (ucr) => ucr.clientRole)
   userClientRoles: UserClientRole[];
 
-  @ManyToMany(() => Permission, { cascade: true })
+  @ManyToMany(() => Permission, (permission) => permission.clientRoles, { cascade: true })
   @JoinTable({
     name: 'client_role_permissions',
+    joinColumn: { name: 'client_role_id' },
+    inverseJoinColumn: { name: 'permission_id' },
   })
   permissions: Permission[];
 }

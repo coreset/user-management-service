@@ -542,9 +542,19 @@ export class AuthService {
     if (!user) throw new UnauthorizedException('User not found!');
 
     // Flatten permissions across all of the user's roles for PermissionsGuard.
+    // Includes both realm roles (via UserRealmRole) and client roles (via UserClientRole).
+    const realmRoles = (user.userRealmRoles ?? [])
+      .map((urr) => urr.realmRole)
+      .filter(Boolean);
+
     const permissionSet = new Set<string>();
-    for (const role of user.realmRoles ?? []) {
+    for (const role of realmRoles) {
       for (const permission of role.permissions ?? []) {
+        permissionSet.add(permission.name);
+      }
+    }
+    for (const userClientRole of user.userClientRoles ?? []) {
+      for (const permission of userClientRole.clientRole?.permissions ?? []) {
         permissionSet.add(permission.name);
       }
     }
@@ -552,7 +562,7 @@ export class AuthService {
     const currentUser: CurrentUser = {
       id: user.id,
       realmId: user.realm?.id,
-      roles: user.realmRoles,
+      roles: realmRoles,
       permissions: Array.from(permissionSet),
     };
     return currentUser;

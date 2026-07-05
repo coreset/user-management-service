@@ -62,7 +62,7 @@ export class UsersService {
   findAll() {
     return this.UserRepo.find({
       where: { deletedAt: IsNull() },
-      relations: ['realmRoles'],
+      relations: ['userRealmRoles', 'userRealmRoles.realmRole'],
     });
   }
 
@@ -109,7 +109,15 @@ export class UsersService {
   async findById(id: string): Promise<User | null> {
     return this.UserRepo.findOne({
       where: { id },
-      relations: ['realmRoles', 'realmRoles.permissions', 'realm'],
+      relations: [
+        'userRealmRoles',
+        'userRealmRoles.realmRole',
+        'userRealmRoles.realmRole.permissions',
+        'realm',
+        'userClientRoles',
+        'userClientRoles.clientRole',
+        'userClientRoles.clientRole.permissions',
+      ],
     });
   }
 

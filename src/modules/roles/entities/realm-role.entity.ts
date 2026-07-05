@@ -4,6 +4,7 @@ import {
   JoinColumn,
   ManyToOne,
   ManyToMany,
+  OneToMany,
   JoinTable,
   PrimaryGeneratedColumn,
   DeleteDateColumn,
@@ -11,8 +12,8 @@ import {
 } from 'typeorm';
 import { UserRole } from '../enums/role.enum';
 import { Realm } from 'src/modules/realms/entities/realm.entity';
-import { User } from 'src/modules/users/entities/user.entity';
 import { Permission } from 'src/modules/permission/entities/permission.entity';
+import { UserRealmRole } from './user-realm-role.entity';
 import { Exclude } from 'class-transformer';
 import { Audited } from '../../../common/audit/audited.decorator';
 
@@ -37,15 +38,14 @@ export class RealmRole {
   @JoinColumn({ name: 'realm_id' })
   realm!: Realm;
 
-  @ManyToMany(() => Permission, (permission) => permission.roles, { cascade: true })
+  @ManyToMany(() => Permission, (permission) => permission.realmRoles, { cascade: true })
   @JoinTable({
     name: 'realm_role_permissions',
+    joinColumn: { name: 'realm_role_id' },
+    inverseJoinColumn: { name: 'permission_id' },
   })
   permissions: Permission[];
 
-  @ManyToMany(() => User, (user) => user.realmRoles)
-  @JoinTable({
-    name: 'user_realm_roles',
-  })
-  users: User[];
+  @OneToMany(() => UserRealmRole, (userRealmRole) => userRealmRole.realmRole)
+  userRealmRoles: UserRealmRole[];
 }

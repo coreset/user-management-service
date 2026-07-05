@@ -144,15 +144,21 @@ entity PERMISSIONS {
   deleted_at : TIMESTAMP <<nullable>>
 }
 
-' join table: USERS <-> REALM_ROLES (many-to-many)
+' Assignment of a realm role to a user (join entity, mirrors USER_CLIENT_ROLES).
 entity USER_REALM_ROLES {
-  * # user_id : UUID <<FK, PK>>
-  * # role_id : UUID <<FK, PK>>
+  * id : UUID <<PK>>
+  --
+  created_at : TIMESTAMP
+  --
+  # user_id : UUID <<FK>>
+  # realm_id : UUID <<FK>>
+  # realm_role_id : UUID <<FK>>
+  ' <<UNIQUE (user_id, realm_role_id)>>
 }
 
 ' join table: REALM_ROLES <-> PERMISSIONS (many-to-many)
 entity REALM_ROLE_PERMISSIONS {
-  * # role_id : UUID <<FK, PK>>
+  * # realm_role_id : UUID <<FK, PK>>
   * # permission_id : UUID <<FK, PK>>
 }
 
@@ -330,8 +336,9 @@ REALMS ||--o{ CLIENT_ROLES : "scopes"
 USERS ||--o{ USER_ATTRIBUTES : "has"
 USERS ||--o{ PASSWORD_HISTORY : "has"
 
-USERS ||--o{ USER_REALM_ROLES : ""
-REALM_ROLES ||--o{ USER_REALM_ROLES : ""
+USERS ||--o{ USER_REALM_ROLES : "assigned"
+REALMS ||--o{ USER_REALM_ROLES : "scopes"
+REALM_ROLES ||--o{ USER_REALM_ROLES : "assigned via"
 REALM_ROLES ||--o{ REALM_ROLE_PERMISSIONS : ""
 PERMISSIONS ||--o{ REALM_ROLE_PERMISSIONS : ""
 CLIENT_ROLES ||--o{ CLIENT_ROLE_PERMISSIONS : ""

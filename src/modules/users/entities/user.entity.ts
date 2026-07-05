@@ -6,7 +6,6 @@ import {
   UpdateDateColumn,
   OneToMany,
   BeforeInsert,
-  ManyToMany,
   ManyToOne,
   JoinColumn,
   DeleteDateColumn,
@@ -17,7 +16,7 @@ import { AccessToken } from '../../auth/entities/access-token.entity';
 import { RefreshToken } from '../../auth/entities/refresh-token.entity';
 import { UserVerificationIdentifier } from '../../auth/entities/user-verification-identifier.entity';
 import * as bcrypt from 'bcrypt';
-import { RealmRole } from 'src/modules/roles/entities/realm-role.entity';
+import { UserRealmRole } from 'src/modules/roles/entities/user-realm-role.entity';
 import { UserClientRole } from 'src/modules/clients/entities/user-client-role.entity';
 import { Realm } from 'src/modules/realms/entities/realm.entity';
 import { Exclude } from 'class-transformer';
@@ -82,13 +81,11 @@ export class User {
   @DeleteDateColumn({ name: 'deleted_at' })
   deletedAt?: Date;
 
-  /* Many-to-Many
-   * user-1 can have 'USER' and 'EDITOR' roles
-   * user-1 and user-2 can have 'EDITOR' role.
-   **/
-
-  @ManyToMany(() => RealmRole, (role) => role.users, { cascade: true })
-  realmRoles: RealmRole[];
+  /* Realm-role assignments (join entity: user_realm_roles).
+   * A user can hold many realm roles; each row links one user to one realm role.
+   */
+  @OneToMany(() => UserRealmRole, (userRealmRole) => userRealmRole.user)
+  userRealmRoles: UserRealmRole[];
 
   @OneToMany(() => UserClientRole, (userClientRole) => userClientRole.user)
   userClientRoles: UserClientRole[];
