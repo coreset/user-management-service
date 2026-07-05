@@ -43,7 +43,7 @@ export class RealmRole {
   })
   permissions: Permission[];
 
-  @ManyToMany(() => User, (user) => user.roles)
+  @ManyToMany(() => User, (user) => user.realmRoles)
   @JoinTable({
     name: 'user_realm_roles',
   })

@@ -5,7 +5,7 @@ import {
   ManyToMany,
   DeleteDateColumn,
 } from 'typeorm';
-import { RealmRole } from 'src/modules/roles/entities/role.entity';
+import { RealmRole } from 'src/modules/roles/entities/realm-role.entity';
 import { Exclude } from 'class-transformer';
 import { Audited } from '../../../common/audit/audited.decorator';
 

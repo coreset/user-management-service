@@ -1,4 +1,4 @@
-import { RealmRole } from 'src/modules/roles/entities/role.entity';
+import { RealmRole } from 'src/modules/roles/entities/realm-role.entity';
 
 export type CurrentUser = {
   id: string;

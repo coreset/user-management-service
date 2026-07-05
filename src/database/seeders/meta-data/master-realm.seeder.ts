@@ -2,7 +2,7 @@ import { DataSource } from 'typeorm';
 import { Seeder } from 'typeorm-extension';
 import { Realm } from '../../../modules/realms/entities/realm.entity';
 import { RealmKey } from '../../../modules/realms/entities/realm-key.entity';
-import { RealmRole } from '../../../modules/roles/entities/role.entity';
+import { RealmRole } from '../../../modules/roles/entities/realm-role.entity';
 import { User } from '../../../modules/users/entities/user.entity';
 import { FixedUserRole } from '../../../modules/roles/enums/role.enum';
 import { generateRealmKeyPair } from '../../../common/utils/rsa-key.util';
@@ -84,7 +84,7 @@ export class MasterRealmSeeder implements Seeder {
           lastName: 'Admin',
           isActive: true,
           realm: masterRealm,
-          roles: [superAdminRole],
+          realmRoles: [superAdminRole],
         }),
       );
       console.log(`Super admin user '${superAdminEmail}' created`);

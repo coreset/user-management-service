@@ -2,7 +2,7 @@ import { BadRequestException, ConflictException, Injectable, InternalServerError
 import { CreateRoleDto } from './dto/create-role.dto';
 import { UpdateRoleDto } from './dto/update-role.dto';
 import { InjectRepository } from '@nestjs/typeorm';
-import { RealmRole } from './entities/role.entity';
+import { RealmRole } from './entities/realm-role.entity';
 import { In, Like, QueryFailedError, Repository, UpdateResult } from 'typeorm';
 import { AppLoggerService } from 'src/common/logger/logger.service';
 import { UsersService } from '../users/users.service';

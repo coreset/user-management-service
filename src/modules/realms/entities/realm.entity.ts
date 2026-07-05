@@ -9,7 +9,7 @@ import {
 import { RealmKey } from './realm-key.entity';
 import { User } from '../../users/entities/user.entity';
 import { Client } from '../../clients/entities/client.entity';
-import { RealmRole } from '../../roles/entities/role.entity';
+import { RealmRole } from '../../roles/entities/realm-role.entity';
 import { Audited } from '../../../common/audit/audited.decorator';
 
 @Audited()

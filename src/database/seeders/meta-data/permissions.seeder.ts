@@ -1,7 +1,7 @@
 import { DataSource } from 'typeorm';
 import { Seeder } from 'typeorm-extension';
 import { Permission } from '../../../modules/permission/entities/permission.entity';
-import { RealmRole } from '../../../modules/roles/entities/role.entity';
+import { RealmRole } from '../../../modules/roles/entities/realm-role.entity';
 import { FixedUserRole } from '../../../modules/roles/enums/role.enum';
 import { PermissionKey } from '../../../modules/permission/constants/permission-key.enum';
 

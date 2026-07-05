@@ -543,7 +543,7 @@ export class AuthService {
 
     // Flatten permissions across all of the user's roles for PermissionsGuard.
     const permissionSet = new Set<string>();
-    for (const role of user.roles ?? []) {
+    for (const role of user.realmRoles ?? []) {
       for (const permission of role.permissions ?? []) {
         permissionSet.add(permission.name);
       }
@@ -552,7 +552,7 @@ export class AuthService {
     const currentUser: CurrentUser = {
       id: user.id,
       realmId: user.realm?.id,
-      roles: user.roles,
+      roles: user.realmRoles,
       permissions: Array.from(permissionSet),
     };
     return currentUser;
