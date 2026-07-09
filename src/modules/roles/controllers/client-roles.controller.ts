@@ -11,7 +11,7 @@ import {
 import { ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { ClientRolesService } from '../services/client-roles.service';
 import { CreateClientRoleDto } from '../../clients/dto/create-client-role.dto';
-import { AssignPermissionsDto } from '../../clients/dto/assign-permissions.dto';
+import { AssignPermissionsDto } from '../dto/assign-permissions.dto';
 import { Permissions } from '../../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../../permission/constants/permission-key.enum';
 import { RealmsService } from '../../realms/realms.service';

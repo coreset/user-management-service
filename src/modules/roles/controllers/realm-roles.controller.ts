@@ -114,7 +114,7 @@ export class RealmRolesController {
     @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() assignPermissionsDto: AssignPermissionsDto,
   ) {
-    return this.realmRolesService.assignPermissionsToRole(roleId, assignPermissionsDto.permissionIdList);
+    return this.realmRolesService.assignPermissionsToRole(roleId, assignPermissionsDto.permissionIds);
   }
 
   @Permissions([PermissionKey.ROLES_ASSIGN_PERMISSIONS])
