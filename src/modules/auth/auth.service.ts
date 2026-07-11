@@ -563,6 +563,7 @@ export class AuthService {
     const currentUser: CurrentUser = {
       id: user.id,
       realmId: user.realm?.id,
+      realmName: user.realm?.realmName,
       roles: realmRoles,
       permissions: Array.from(permissionSet),
     };

@@ -4,6 +4,7 @@ import { Request } from 'express';
 export interface AuthUser {
   id: string;
   realmId?: string;
+  realmName?: string;
   roles?: Array<{ name: string }>;
   /** Flattened permission names granted by all of the user's roles. */
   permissions?: string[];
