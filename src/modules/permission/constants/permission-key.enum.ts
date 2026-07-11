@@ -1,6 +1,7 @@
 /**
- * Canonical permission strings, seeded into the `permissions` table and
- * assigned to roles via `realm_role_permissions`. Referenced by @Permissions(...)
+ * Canonical permission strings. Seeded into the `permissions` table per realm
+ * (permissions are realm-scoped, UNIQUE(realm_id, name)) and assigned to roles via
+ * `realm_role_permissions` / `client_role_permissions`. Referenced by @Permissions(...)
  * decorators; the actual name stored in the DB must match these values exactly.
  */
 export enum PermissionKey {
@@ -38,7 +39,7 @@ export enum PermissionKey {
   SETTINGS_MANAGE = 'settings:manage',
   USER_ATTRIBUTES_MANAGE = 'user-attributes:manage',
   AUDIT_READ = 'audit:read',
-  /** Manage the global permission catalog (permissions table). SUPER_ADMIN-only. */
+  /** Manage a realm's permission catalog (permissions table). SUPER_ADMIN-only. */
   PERMISSIONS_CREATE = 'permissions:create',
   PERMISSIONS_READ = 'permissions:read',
   PERMISSIONS_UPDATE = 'permissions:update',

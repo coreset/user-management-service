@@ -2,6 +2,7 @@ import { DataSource } from 'typeorm';
 import { Seeder } from 'typeorm-extension';
 import { Permission } from '../../../modules/permission/entities/permission.entity';
 import { RealmRole } from '../../../modules/roles/entities/realm-role.entity';
+import { Realm } from '../../../modules/realms/entities/realm.entity';
 import { FixedUserRole } from '../../../modules/roles/enums/role.enum';
 import { PermissionKey } from '../../../modules/permission/constants/permission-key.enum';
 
@@ -38,27 +39,43 @@ const REALM_ADMIN_PERMISSIONS: PermissionKey[] = [
 ];
 
 /**
- * Seeds every PermissionKey as a Permission row (idempotent), then assigns the
- * full set to SUPER_ADMIN and the realm-management subset to REALM_ADMIN — for
- * every realm's roles, not just master, so tenant realms created later aren't
- * left with empty (i.e. locked-out) role permissions.
+ * Seeds the `master` realm's permission catalog and assigns it to that realm's
+ * SUPER_ADMIN / REALM_ADMIN roles. Permissions are realm-scoped
+ * (UNIQUE(realm_id, name)), so this seeds the base PermissionKey set for master.
  *
- * Must run AFTER MasterRealmSeeder (needs SUPER_ADMIN/REALM_ADMIN role rows to
- * exist for at least the master realm).
+ * Only `master` is handled: it is the realm created by MasterRealmSeeder. Tenant
+ * realms are created via the API and bootstrap their own permissions there.
+ *
+ * Must run AFTER MasterRealmSeeder (needs the master realm + its role rows).
  */
 export class PermissionsSeeder implements Seeder {
   async run(dataSource: DataSource): Promise<void> {
+    const realmRepo = dataSource.getRepository(Realm);
     const permissionRepo = dataSource.getRepository(Permission);
     const roleRepo = dataSource.getRepository(RealmRole);
 
-    // 1. Ensure every permission key exists as a row -------------------------
-    const allKeys = Object.values(PermissionKey);
+    const masterRealmName = process.env.MASTER_REALM_NAME || 'master';
+    const realm = await realmRepo.findOne({
+      where: { realmName: masterRealmName },
+    });
+    if (!realm) {
+      console.warn(
+        `Master realm '${masterRealmName}' not found; skipping permission seeding`,
+      );
+      return;
+    }
+
+    // 1. Ensure every permission key exists as a row for the master realm ------
     const permissionsByName = new Map<string, Permission>();
-    for (const name of allKeys) {
-      let permission = await permissionRepo.findOne({ where: { name } });
+    for (const name of Object.values(PermissionKey)) {
+      let permission = await permissionRepo.findOne({
+        where: { name, realm: { id: realm.id } },
+      });
       if (!permission) {
-        permission = await permissionRepo.save(permissionRepo.create({ name }));
-        console.log(`Permission '${name}' created`);
+        permission = await permissionRepo.save(
+          permissionRepo.create({ name, realm: { id: realm.id } as Realm }),
+        );
+        console.log(`Permission '${name}' created in realm '${realm.realmName}'`);
       }
       permissionsByName.set(name, permission);
     }
@@ -67,27 +84,29 @@ export class PermissionsSeeder implements Seeder {
       (key) => permissionsByName.get(key)!,
     );
 
-    // 2. Assign to every SUPER_ADMIN / REALM_ADMIN role across all realms ----
-    const superAdminRoles = await roleRepo.find({
-      where: { name: FixedUserRole.SUPER_ADMIN },
+    // 2. Assign to the master realm's SUPER_ADMIN / REALM_ADMIN roles ----------
+    const superAdminRole = await roleRepo.findOne({
+      where: { name: FixedUserRole.SUPER_ADMIN, realm: { id: realm.id } },
       relations: ['permissions'],
     });
-    for (const role of superAdminRoles) {
-      role.permissions = allPermissions;
-      await roleRepo.save(role);
+    if (superAdminRole) {
+      superAdminRole.permissions = allPermissions;
+      await roleRepo.save(superAdminRole);
     }
 
-    const realmAdminRoles = await roleRepo.find({
-      where: { name: FixedUserRole.REALM_ADMIN },
+    const realmAdminRole = await roleRepo.findOne({
+      where: { name: FixedUserRole.REALM_ADMIN, realm: { id: realm.id } },
       relations: ['permissions'],
     });
-    for (const role of realmAdminRoles) {
-      role.permissions = realmAdminPermissions;
-      await roleRepo.save(role);
+    if (realmAdminRole) {
+      realmAdminRole.permissions = realmAdminPermissions;
+      await roleRepo.save(realmAdminRole);
     }
 
     console.log(
-      `Permissions assigned: ${superAdminRoles.length} SUPER_ADMIN role(s), ${realmAdminRoles.length} REALM_ADMIN role(s)`,
+      `Realm '${realm.realmName}': permissions assigned ` +
+        `(SUPER_ADMIN: ${superAdminRole ? 'yes' : 'no'}, ` +
+        `REALM_ADMIN: ${realmAdminRole ? 'yes' : 'no'})`,
     );
   }
 }

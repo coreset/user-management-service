@@ -11,6 +11,7 @@ import { User } from '../../users/entities/user.entity';
 import { Client } from '../../clients/entities/client.entity';
 import { RealmRole } from '../../roles/entities/realm-role.entity';
 import { UserRealmRole } from '../../roles/entities/user-realm-role.entity';
+import { Permission } from '../../permission/entities/permission.entity';
 import { Audited } from '../../../common/audit/audited.decorator';
 
 @Audited()
@@ -48,4 +49,7 @@ export class Realm {
 
   @OneToMany(() => UserRealmRole, (userRealmRole) => userRealmRole.realm)
   userRealmRoles: UserRealmRole[];
+
+  @OneToMany(() => Permission, (permission) => permission.realm)
+  permissions: Permission[];
 }

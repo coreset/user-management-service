@@ -13,7 +13,7 @@ import {
 import { RealmRolesService } from '../services/realm-roles.service';
 import { CreateRoleDto } from '../dto/create-role.dto';
 import { UpdateRoleDto } from '../dto/update-role.dto';
-import { ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam } from '@nestjs/swagger';
 import { Permissions } from '../../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../../permission/constants/permission-key.enum';
 import { RoleQueryDto } from '../dto/role-query.dto';
@@ -110,13 +110,23 @@ export class RealmRolesController {
   // doc comment for the privilege-escalation risk of granting it to REALM_ADMIN.
   @Permissions([PermissionKey.ROLES_ASSIGN_PERMISSIONS])
   @Post(':roleId/permissions')
+  @ApiOperation({
+    summary: 'Assign permissions to a realm role',
+    description: 'Assigns one or more permissions to an existing realm role. Only users with SUPER_ADMIN permission can perform this operation due to privilege escalation risks.',
+  })
+  @ApiParam({
+    name: 'roleId',
+    required: true,
+    type: 'string',
+    format: 'uuid',
+    description: 'UUID of the realm role to assign permissions to',
+  })
   addPermissions(
     @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() assignPermissionsDto: AssignPermissionsDto,
   ) {
     return this.realmRolesService.assignPermissionsToRole(roleId, assignPermissionsDto.permissionIds);
   }
-
   @Permissions([PermissionKey.ROLES_ASSIGN_PERMISSIONS])
   @Delete(':roleId/permissions/:permissionId')
   removePermission(

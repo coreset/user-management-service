@@ -154,11 +154,13 @@ export class ClientRolesService {
       clientRoleId,
     );
 
+    // Restricted to the client's realm (prevents attaching another realm's
+    // permissions to this client role).
     const permissions = await this.permissionRepo.find({
-      where: { id: In(permissionIds) },
+      where: { id: In(permissionIds), realm: { id: realmId } },
     });
     if (permissions.length !== permissionIds.length) {
-      throw new NotFoundException('One or more permissions not found');
+      throw new NotFoundException('One or more permissions not found in this realm');
     }
 
     const existingIds = new Set(clientRole.permissions.map((p) => p.id));

@@ -137,11 +137,16 @@ entity REALM_ROLES {
   ' <<UNIQUE (realm_id, name)>>
 }
 
+' Realm-scoped: each realm owns its permission catalog (base PermissionKey set,
+' seeded per realm) and may define custom permissions on top.
 entity PERMISSIONS {
   * id : UUID <<PK>>
   --
-  name : STRING <<UNIQUE>>
+  name : STRING ' <<UNIQUE per realm>>
   deleted_at : TIMESTAMP <<nullable>>
+  --
+  # realm_id : UUID <<FK>>
+  ' <<UNIQUE (realm_id, name)>>
 }
 
 ' Assignment of a realm role to a user (join entity, mirrors USER_CLIENT_ROLES).
@@ -330,6 +335,7 @@ REALMS ||--o{ REALM_KEYS : "signs with"
 REALMS ||--o{ REALM_SETTINGS : "configured by"
 REALMS ||--o{ USERS : "contains"
 REALMS ||--o{ REALM_ROLES : "defines"
+REALMS ||--o{ PERMISSIONS : "defines"
 REALMS ||--o{ CLIENTS : "registers"
 REALMS ||--o{ CLIENT_ROLES : "scopes"
 

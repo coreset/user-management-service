@@ -246,7 +246,7 @@ export class RealmRolesService {
   async assignPermissionsToRole(roleId: string, permissionIdList: string[]) {
     const role: RealmRole = (await this.RoleRepo.findOne({
       where: { id: roleId },
-      relations: ['permissions'],
+      relations: ['permissions', 'realm'],
     })) as RealmRole;
 
     if (!role) {
@@ -257,14 +257,19 @@ export class RealmRolesService {
       throw new NotFoundException(`Role with id ${roleId} not found`);
     }
 
-    const permissionsToAdd: Permission[] = await this.permissionService.findByIdList(permissionIdList);
+    // Restricted to the role's realm: permissions from another realm won't be
+    // found and are reported as missing below (prevents cross-realm attach).
+    const permissionsToAdd: Permission[] = await this.permissionService.findByIdList(
+      role.realm.id,
+      permissionIdList,
+    );
 
     const foundIds: string[] = permissionsToAdd.map((u) => u.id);
     const missingIds = permissionIdList.filter((id) => !foundIds.includes(id));
 
     if (missingIds.length > 0) {
       this.logger.warn(
-        `Permissions with id ${missingIds.toString()} not found`,
+        `Permissions with id ${missingIds.toString()} not found in realm ${role.realm.id}`,
         RealmRolesService.name,
       );
       throw new BadRequestException(
@@ -280,7 +285,7 @@ export class RealmRolesService {
     );
 
     return {
-      message: 'Permissions successfully assigned to the role',
+      message: `Permissions successfully assigned to the role ${role.name}`,
       roleId: role.id,
       assignedPermissionIds: foundIds,
     };
@@ -335,7 +340,7 @@ export class RealmRolesService {
   async unassignPermissionsFromRole(roleId: string, permissionIdList: string[]) {
     const role: RealmRole = (await this.RoleRepo.findOne({
       where: { id: roleId },
-      relations: ['permissions'],
+      relations: ['permissions', 'realm'],
     })) as RealmRole;
 
     if (!role) {
@@ -346,7 +351,10 @@ export class RealmRolesService {
       throw new NotFoundException(`Role with id ${roleId} not found`);
     }
 
-    const permissionsToRemove: Permission[] = await this.permissionService.findByIdList(permissionIdList);
+    const permissionsToRemove: Permission[] = await this.permissionService.findByIdList(
+      role.realm.id,
+      permissionIdList,
+    );
 
     const foundIds: string[] = permissionsToRemove.map((u) => u.id);
     const missingIds = permissionIdList.filter((id) => !foundIds.includes(id));

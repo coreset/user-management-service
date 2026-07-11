@@ -1,26 +1,43 @@
-import { Controller, Get, Post, Body, Patch, Param, Delete } from '@nestjs/common';
+import {
+  Controller,
+  Get,
+  Post,
+  Body,
+  Patch,
+  Param,
+  Delete,
+} from '@nestjs/common';
+import { ApiBearerAuth, ApiParam } from '@nestjs/swagger';
 import { PermissionService } from './permission.service';
 import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
-import { ApiBearerAuth } from '@nestjs/swagger';
 import { Permissions } from './decorators/permissions.decorator';
 import { PermissionKey } from './constants/permission-key.enum';
 
-@Controller('permission')
+@Controller('realms/:realmName/permissions')
 @ApiBearerAuth('authorization')
+@ApiParam({
+  name: 'realmName',
+  required: true,
+  example: 'master',
+  description: 'Name of the realm the permissions belong to',
+})
 export class PermissionController {
   constructor(private readonly permissionService: PermissionService) {}
 
   @Permissions([PermissionKey.PERMISSIONS_CREATE])
   @Post()
-  create(@Body() createPermissionDto: CreatePermissionDto) {
-    return this.permissionService.create(createPermissionDto);
+  create(
+    @Param('realmName') realmName: string,
+    @Body() createPermissionDto: CreatePermissionDto,
+  ) {
+    return this.permissionService.create(realmName, createPermissionDto);
   }
 
   @Permissions([PermissionKey.PERMISSIONS_READ])
   @Get()
-  findAll() {
-    return this.permissionService.findAll();
+  findAll(@Param('realmName') realmName: string) {
+    return this.permissionService.findAll(realmName);
   }
 
   @Permissions([PermissionKey.PERMISSIONS_READ])
