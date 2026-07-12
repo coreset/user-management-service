@@ -1,4 +1,4 @@
-import { BadRequestException, ConflictException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ConflictException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
 import { CreateRoleDto } from '../dto/create-role.dto';
 import { UpdateRoleDto } from '../dto/update-role.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -11,6 +11,7 @@ import { User } from '../../users/entities/user.entity';
 import { PermissionService } from '../../permission/permission.service';
 import { Permission } from '../../permission/entities/permission.entity';
 import { Realm } from '../../realms/entities/realm.entity';
+import { FixedUserRole } from '../enums/role.enum';
 
 @Injectable()
 export class RealmRolesService {
@@ -139,6 +140,14 @@ export class RealmRolesService {
       throw new NotFoundException(`Role with id ${id} not found`);
     }
 
+    if (role.name === FixedUserRole.SUPER_ADMIN) {
+      this.logger.warn(
+        `Super Admin cannot delete`,
+        RealmRolesService.name,
+      );
+      throw new ForbiddenException(`Super Admin cannot delete`);
+    }
+
     if (role.deletedAt) {
       this.logger.warn(`Role with id ${id} is already deleted`, RealmRolesService.name);
       throw new ConflictException(`Role with id ${id} is already deleted`);
@@ -202,6 +211,14 @@ export class RealmRolesService {
       throw new NotFoundException(`Role with id ${roleId} not found`);
     }
 
+    if (role.name === FixedUserRole.SUPER_ADMIN) {
+      this.logger.warn(
+        `Super Admin role cannot assign`,
+        RealmRolesService.name,
+      );
+      throw new ForbiddenException(`Super Admin role cannot assign`);
+    }
+
     const usersToAdd: User[] = await this.usersService.findByIdList(userIdList, role.realm.id);
 
     const foundIds: string[] = usersToAdd.map((u) => u.id);
@@ -257,6 +274,14 @@ export class RealmRolesService {
       throw new NotFoundException(`Role with id ${roleId} not found`);
     }
 
+    if (role.name === FixedUserRole.SUPER_ADMIN) {
+      this.logger.warn(
+        `Super Admin role already has permission`,
+        RealmRolesService.name,
+      );
+      throw new BadRequestException(`Super Admin role already has permission`);
+    }
+
     // Restricted to the role's realm: permissions from another realm won't be
     // found and are reported as missing below (prevents cross-realm attach).
     const permissionsToAdd: Permission[] = await this.permissionService.findByIdList(
@@ -304,6 +329,14 @@ export class RealmRolesService {
       throw new NotFoundException(`Role with id ${roleId} not found`);
     }
 
+    if (role.name === FixedUserRole.SUPER_ADMIN) {
+      this.logger.warn(
+        `Super Admin role cannot unassign`,
+        RealmRolesService.name,
+      );
+      throw new ForbiddenException(`Super Admin role cannot unassign`);
+    }
+
     const usersToRemove: User[] = await this.usersService.findByIdList(userIdList);
 
     const foundIds: string[] = usersToRemove.map((u) => u.id);
@@ -349,6 +382,14 @@ export class RealmRolesService {
         RealmRolesService.name,
       );
       throw new NotFoundException(`Role with id ${roleId} not found`);
+    }
+
+    if (role.name === FixedUserRole.SUPER_ADMIN) {
+      this.logger.warn(
+        `Super Admin role permissions cannot change`,
+        RealmRolesService.name,
+      );
+      throw new ForbiddenException(`Super Admin role permissions cannot change`);
     }
 
     const permissionsToRemove: Permission[] = await this.permissionService.findByIdList(

@@ -31,6 +31,7 @@ import { User } from '../users/entities/user.entity';
 import { AuditService } from '../../common/audit/audit.service';
 import { LocalRegisterDto } from './dto/local-register.dto';
 import { SettingsService } from '../settings/settings.service';
+import { AppLoggerService } from '../../common/logger/logger.service';
 
 /** How many previous passwords to block from reuse. */
 const PASSWORD_HISTORY_COUNT = 5;
@@ -66,6 +67,7 @@ export class AuthService {
     private readonly realmsService: RealmsService,
     private readonly auditService: AuditService,
     private readonly settingsService: SettingsService,
+    private readonly logger: AppLoggerService,
     @InjectRepository(User) private UserRepo: Repository<User>,
     @InjectRepository(RefreshToken) private RefreshTokenRepo: Repository<RefreshToken>,
     @InjectRepository(UserVerificationIdentifier) private UserVerificationIdentifierRepo: Repository<UserVerificationIdentifier>,
@@ -548,15 +550,29 @@ export class AuthService {
       .filter(Boolean);
 
     const permissionSet = new Set<string>();
+
+    // Process realm role permissions
     for (const role of realmRoles) {
-      for (const permission of role.permissions ?? []) {
+      const rolePermissions = role.permissions ?? [];
+      for (const permission of rolePermissions) {
         permissionSet.add(permission.name);
       }
+      this.logger.debug(
+        `User ${user.id} realm role "${role.name}": ${rolePermissions.length} permissions`,
+        'AuthService',
+      );
     }
+
+    // Process client role permissions
     for (const userClientRole of user.userClientRoles ?? []) {
-      for (const permission of userClientRole.clientRole?.permissions ?? []) {
+      const clientRolePermissions = userClientRole.clientRole?.permissions ?? [];
+      for (const permission of clientRolePermissions) {
         permissionSet.add(permission.name);
       }
+      this.logger.debug(
+        `User ${user.id} client role "${userClientRole.clientRole?.name}": ${clientRolePermissions.length} permissions`,
+        'AuthService',
+      );
     }
 
     const currentUser: CurrentUser = {
@@ -566,6 +582,12 @@ export class AuthService {
       roles: realmRoles,
       permissions: Array.from(permissionSet),
     };
+
+    this.logger.debug(
+      `User ${user.id} (${user.realm?.realmName}) has ${currentUser.permissions.length} total permissions: ${Array.from(permissionSet).join(', ')}`,
+      'AuthService',
+    );
+
     return currentUser;
   }
 
