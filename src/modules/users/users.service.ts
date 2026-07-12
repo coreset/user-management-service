@@ -67,10 +67,12 @@ export class UsersService {
     });
   }
 
-  findByIdList(idList: string[]): Promise<any> {
-    return this.UserRepo.find({
-      where: {id : In(idList)}
-    });
+  findByIdList(idList: string[], realmId?: string): Promise<any> {
+    const where: any = { id: In(idList) };
+    if (realmId) {
+      where.realm = { id: realmId };
+    }
+    return this.UserRepo.find({ where });
   }
 
   async searchAllPaginated(

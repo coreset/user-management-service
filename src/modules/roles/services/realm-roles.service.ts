@@ -202,18 +202,18 @@ export class RealmRolesService {
       throw new NotFoundException(`Role with id ${roleId} not found`);
     }
 
-    const usersToAdd: User[] = await this.usersService.findByIdList(userIdList);
+    const usersToAdd: User[] = await this.usersService.findByIdList(userIdList, role.realm.id);
 
     const foundIds: string[] = usersToAdd.map((u) => u.id);
     const missingIds = userIdList.filter((id) => !foundIds.includes(id));
 
     if (missingIds.length > 0) {
       this.logger.warn(
-        `Users with id ${missingIds.toString()} not found`,
+        `Users with id ${missingIds.toString()} not found in realm ${role.realm.id}`,
         RealmRolesService.name,
       );
       throw new BadRequestException(
-        `Users not found for IDs: ${missingIds.join(', ')}`,
+        `Users not found for IDs: ${missingIds.join(', ')} in realm ${role.realm.id}`,
       );
     }
 
