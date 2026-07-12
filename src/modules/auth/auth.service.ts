@@ -539,7 +539,6 @@ export class AuthService {
 
   async validateUserRole(userId: string): Promise<CurrentUser> {
     const user = await this.userService.findById(userId);
-    console.log("user >>>>", user?.userRealmRoles[0].realmRole);
     if (!user) throw new UnauthorizedException('User not found!');
 
     // Flatten permissions across all of the user's roles for PermissionsGuard.

@@ -75,7 +75,7 @@ export class PermissionsSeeder implements Seeder {
         permission = await permissionRepo.save(
           permissionRepo.create({ name, realm: { id: realm.id } as Realm }),
         );
-        console.log(`Permission '${name}' created in realm '${realm.realmName}'`);
+        // console.log(`Permission '${name}' created in realm '${realm.realmName}'`);
       }
       permissionsByName.set(name, permission);
     }
