@@ -119,3 +119,68 @@ They model genuinely different scopes:
 ### Create new Realm 
 /auth/login
 enter useremail and password
+
+
+
+### User Story about Realm   
+using pattern of test/03-tenant-isolation.e2e-spec.ts file make following test case with your improvement(new files, you can decide how many files you need to create to make following test cases)
+response mainly can be success/fail/error so you need to clarify exact response by reffering by user-management-service. 
+
+1. super admin create pawn realm.
+
+2. super admin create new userA under master realm
+3. super admin create new userB under pawn realm.
+
+4. super admin create ManagerA role under master realm.
+5. super admin create ManagerB role under pawn realm.
+
+6. super admin add roles:read, roles:create, roles:delete, roles:update master realm permissions to ManagerA and getting success response.
+7. super admin add roles:read, roles:create, roles:delete, roles:update master realm permission to  ManagerB and getting access denied 
+
+8. userA login to master realm and getting success response.
+9. userB login to master realm and getting access denied response.
+10. userA login to pawn realm and getting access desnied response.
+11. userB login to pawn realm and getting success response.
+
+12. userA read master realm roles getting access denied response.
+13. userB read pawn realm roles getting access denied response.
+
+14. super admin assign ManagerA role to userA getting success response.
+15. super admin assign ManagerB role to userA getting access denied response.
+16. super admin assign ManagerB role to userB getting seccess response. 
+17. super admin assign ManagerA role to userB getting access denied response. 
+
+18. userA read master realm roles getting success response.
+19. userB read pawn realm roles getting success response.
+20. userA read pawn realm roles getting access denied response.
+21. userB read master realm roles getting access denied response.
+
+22. userA read master realm permission getting access denied response.
+23. userB read pawn realm permission getting access denied response. 
+
+24. userA create new role pawn:create under master realm getting success response. 
+25. userB create new role pawn:read under master realm getting access denied response.
+26. userB crate new role pawn:read under pawn realm getting success response.
+
+
+27. userA create new user name userX under master realm getting access denied response.
+28. userB create new user name userY under master realm getting access denied response.
+29. userB craete new user name userZ usner pawn realm getting access denied response.
+
+30. super admin assign master realm permission user:create to ManagerA role getting success response.
+31. super admin assign master realm permission user:create, roles:assign-users to ManagerB role getting error response. 
+32. super admin assign pawn realm permission user:create to ManagerB role getting success response.
+
+33. userA create new user userX under master realms getting success response. 
+34. userB create new user userY under master realm getting access denied response.
+35. userB create new user userY under pawn realm getting success response.
+36. userB assing ManagerB role to userY getting success response.
+37. userB assing to ManagerB role to userX getting error response.
+38. userA assing to ManagerA role to userX getting access denied response.
+
+39. userX login and read roles under master realm getting access denied response.
+40. userX login and read roles usner apwn realms getting access denied response.
+41. userY login and read roles under pawn realms getting success response. 
+42. userY login and read roles under master realms getting access denied response. 
+
+### User Story about Clients   
