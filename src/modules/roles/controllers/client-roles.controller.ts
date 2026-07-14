@@ -8,7 +8,7 @@ import {
   ParseUUIDPipe,
   NotFoundException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiParam } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { ClientRolesService } from '../services/client-roles.service';
 import { CreateClientRoleDto } from '../../clients/dto/create-client-role.dto';
 import { AssignPermissionsDto } from '../dto/assign-permissions.dto';
@@ -16,6 +16,14 @@ import { Permissions } from '../../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../../permission/constants/permission-key.enum';
 import { RealmsService } from '../../realms/realms.service';
 
+const CLIENT_ROLE_ID_PARAM = {
+  name: 'clientRoleId',
+  required: true,
+  format: 'uuid',
+  description: 'UUID of the client role',
+} as const;
+
+@ApiTags('Client Roles')
 @Controller('realms/:realmName/clients/:clientId/roles')
 @ApiBearerAuth('authorization')
 @ApiParam({
@@ -48,6 +56,13 @@ export class ClientRolesController {
 
   @Permissions([PermissionKey.CLIENT_ROLES_CREATE])
   @Post()
+  @ApiOperation({
+    summary: 'Create a client role',
+    description: 'Creates a new role scoped to the given client within the given realm.',
+  })
+  @ApiResponse({ status: 201, description: 'Client role created.' })
+  @ApiResponse({ status: 404, description: "Realm not found, or client not found in this realm." })
+  @ApiResponse({ status: 409, description: 'A role with this name already exists on this client.' })
   async create(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
@@ -59,6 +74,12 @@ export class ClientRolesController {
 
   @Permissions([PermissionKey.CLIENT_ROLES_READ])
   @Get()
+  @ApiOperation({
+    summary: 'List client roles',
+    description: 'Lists all roles defined on the given client.',
+  })
+  @ApiResponse({ status: 200, description: 'List of client roles.' })
+  @ApiResponse({ status: 404, description: 'Realm not found, or client not found in this realm.' })
   async findAll(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
@@ -69,6 +90,13 @@ export class ClientRolesController {
 
   @Permissions([PermissionKey.CLIENT_ROLES_DELETE])
   @Delete(':clientRoleId')
+  @ApiOperation({
+    summary: 'Delete a client role',
+    description: 'Soft-deletes a client role.',
+  })
+  @ApiParam(CLIENT_ROLE_ID_PARAM)
+  @ApiResponse({ status: 200, description: 'Client role soft-deleted.' })
+  @ApiResponse({ status: 404, description: 'Client role not found.' })
   remove(@Param('clientRoleId', ParseUUIDPipe) clientRoleId: string) {
     return this.clientRolesService.deleteClientRole(clientRoleId);
   }
@@ -77,6 +105,12 @@ export class ClientRolesController {
 
   @Permissions([PermissionKey.CLIENT_ROLES_ASSIGN_USERS])
   @Post(':clientRoleId/users/:userId')
+  @ApiOperation({ summary: 'Assign a user to a client role' })
+  @ApiParam(CLIENT_ROLE_ID_PARAM)
+  @ApiParam({ name: 'userId', required: true, format: 'uuid', description: 'UUID of the user to assign' })
+  @ApiResponse({ status: 201, description: 'User assigned to the client role.' })
+  @ApiResponse({ status: 404, description: 'Realm, client, or client role not found.' })
+  @ApiResponse({ status: 409, description: 'User already has this client role.' })
   async assignUser(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
@@ -94,6 +128,11 @@ export class ClientRolesController {
 
   @Permissions([PermissionKey.CLIENT_ROLES_ASSIGN_USERS])
   @Delete(':clientRoleId/users/:userId')
+  @ApiOperation({ summary: 'Unassign a user from a client role' })
+  @ApiParam(CLIENT_ROLE_ID_PARAM)
+  @ApiParam({ name: 'userId', required: true, format: 'uuid', description: 'UUID of the user to unassign' })
+  @ApiResponse({ status: 200, description: 'User unassigned from the client role.' })
+  @ApiResponse({ status: 404, description: 'Assignment not found.' })
   unassignUser(
     @Param('clientRoleId', ParseUUIDPipe) clientRoleId: string,
     @Param('userId', ParseUUIDPipe) userId: string,
@@ -105,6 +144,13 @@ export class ClientRolesController {
 
   @Permissions([PermissionKey.CLIENT_ROLES_ASSIGN_PERMISSIONS])
   @Post(':clientRoleId/permissions')
+  @ApiOperation({
+    summary: 'Assign permissions to a client role',
+    description: 'Assigns one or more realm-scoped permissions to a client role.',
+  })
+  @ApiParam(CLIENT_ROLE_ID_PARAM)
+  @ApiResponse({ status: 201, description: 'Permissions assigned to the client role.' })
+  @ApiResponse({ status: 404, description: 'Realm, client, or client role not found; or one or more permissions not found in this realm.' })
   async addPermissions(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
@@ -122,6 +168,10 @@ export class ClientRolesController {
 
   @Permissions([PermissionKey.CLIENT_ROLES_READ])
   @Get(':clientRoleId/permissions')
+  @ApiOperation({ summary: 'List permissions granted by a client role' })
+  @ApiParam(CLIENT_ROLE_ID_PARAM)
+  @ApiResponse({ status: 200, description: 'List of permissions granted by the client role.' })
+  @ApiResponse({ status: 404, description: 'Realm, client, or client role not found.' })
   async listPermissions(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
@@ -137,6 +187,11 @@ export class ClientRolesController {
 
   @Permissions([PermissionKey.CLIENT_ROLES_ASSIGN_PERMISSIONS])
   @Delete(':clientRoleId/permissions/:permissionId')
+  @ApiOperation({ summary: 'Remove a permission from a client role' })
+  @ApiParam(CLIENT_ROLE_ID_PARAM)
+  @ApiParam({ name: 'permissionId', required: true, format: 'uuid', description: 'UUID of the permission to remove' })
+  @ApiResponse({ status: 200, description: 'Permission removed from the client role.' })
+  @ApiResponse({ status: 404, description: 'Realm, client, or client role not found.' })
   async removePermission(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
