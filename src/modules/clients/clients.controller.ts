@@ -6,19 +6,39 @@ import {
   Patch,
   Param,
   Delete,
-  Req,
   ParseUUIDPipe,
+  HttpCode,
+  HttpStatus,
 } from '@nestjs/common';
-import { ApiBearerAuth } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
 import { Permissions } from '../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../permission/constants/permission-key.enum';
-import { AuthRequest } from '../auth/types/request';
 
-@Controller('clients')
+const ID_PARAM = {
+  name: 'id',
+  required: true,
+  format: 'uuid',
+  description: 'UUID of the client',
+} as const;
+
+@ApiTags('Clients')
+@Controller('realms/:realmName/clients')
 @ApiBearerAuth('authorization')
+@ApiParam({
+  name: 'realmName',
+  required: true,
+  example: 'master',
+  description: 'Name of the realm the client belongs to',
+})
 export class ClientsController {
   constructor(private readonly clientsService: ClientsService) {}
 
@@ -26,35 +46,84 @@ export class ClientsController {
 
   @Permissions([PermissionKey.CLIENTS_CREATE])
   @Post()
-  create(@Req() req: AuthRequest, @Body() createClientDto: CreateClientDto) {
-    return this.clientsService.create(req.user.realmId!, createClientDto);
+  @ApiOperation({
+    summary: 'Create a client',
+    description: 'Registers a new OAuth/OIDC client within the given realm.',
+  })
+  @ApiResponse({ status: 201, description: 'Client created.' })
+  @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
+  @ApiResponse({ status: 409, description: 'A client with this clientId already exists in this realm.' })
+  async create(
+    @Param('realmName') realmName: string,
+    @Body() createClientDto: CreateClientDto,
+  ) {
+    const realmId = await this.clientsService.resolveRealmId(realmName);
+    return this.clientsService.create(realmId, createClientDto);
   }
 
   @Permissions([PermissionKey.CLIENTS_READ])
   @Get()
-  findAll(@Req() req: AuthRequest) {
-    return this.clientsService.findAll(req.user.realmId!);
+  @ApiOperation({
+    summary: 'List clients',
+    description: 'Lists all clients registered within the given realm.',
+  })
+  @ApiResponse({ status: 200, description: 'List of clients in the realm.' })
+  @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
+  async findAll(@Param('realmName') realmName: string) {
+    const realmId = await this.clientsService.resolveRealmId(realmName);
+    return this.clientsService.findAll(realmId);
   }
 
   @Permissions([PermissionKey.CLIENTS_READ])
   @Get(':id')
-  findOne(@Req() req: AuthRequest, @Param('id', ParseUUIDPipe) id: string) {
-    return this.clientsService.findOne(req.user.realmId!, id);
+  @ApiOperation({
+    summary: 'Get a client by id',
+    description: 'Fetches a single client by its UUID, scoped to the given realm.',
+  })
+  @ApiParam(ID_PARAM)
+  @ApiResponse({ status: 200, description: 'The requested client.' })
+  @ApiResponse({ status: 404, description: 'Realm not found, or client not found in this realm.' })
+  async findOne(
+    @Param('realmName') realmName: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ) {
+    const realmId = await this.clientsService.resolveRealmId(realmName);
+    return this.clientsService.findOne(realmId, id);
   }
 
   @Permissions([PermissionKey.CLIENTS_UPDATE])
   @Patch(':id')
-  update(
-    @Req() req: AuthRequest,
+  @ApiOperation({
+    summary: 'Update a client',
+    description: 'Partially updates a client (any subset of fields) within the given realm.',
+  })
+  @ApiParam(ID_PARAM)
+  @ApiResponse({ status: 200, description: 'Client updated.' })
+  @ApiResponse({ status: 404, description: 'Realm not found, or client not found in this realm.' })
+  async update(
+    @Param('realmName') realmName: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateClientDto: UpdateClientDto,
   ) {
-    return this.clientsService.update(req.user.realmId!, id, updateClientDto);
+    const realmId = await this.clientsService.resolveRealmId(realmName);
+    return this.clientsService.update(realmId, id, updateClientDto);
   }
 
   @Permissions([PermissionKey.CLIENTS_DELETE])
   @Delete(':id')
-  remove(@Req() req: AuthRequest, @Param('id', ParseUUIDPipe) id: string) {
-    return this.clientsService.remove(req.user.realmId!, id);
+  @HttpCode(HttpStatus.NO_CONTENT)
+  @ApiOperation({
+    summary: 'Delete a client',
+    description: 'Permanently removes a client from the given realm.',
+  })
+  @ApiParam(ID_PARAM)
+  @ApiResponse({ status: 204, description: 'Client deleted.' })
+  @ApiResponse({ status: 404, description: 'Realm not found, or client not found in this realm.' })
+  async remove(
+    @Param('realmName') realmName: string,
+    @Param('id', ParseUUIDPipe) id: string,
+  ): Promise<void> {
+    const realmId = await this.clientsService.resolveRealmId(realmName);
+    await this.clientsService.remove(realmId, id);
   }
 }

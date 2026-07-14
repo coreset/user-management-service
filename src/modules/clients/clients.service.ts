@@ -17,8 +17,19 @@ export class ClientsService {
   constructor(
     @InjectRepository(Client)
     private readonly clientRepo: Repository<Client>,
+    @InjectRepository(Realm)
+    private readonly realmRepo: Repository<Realm>,
     private readonly logger: AppLoggerService,
   ) {}
+
+  /** Resolve the realm from its (globally-unique) name in the URL path. */
+  async resolveRealmId(realmName: string): Promise<string> {
+    const realm = await this.realmRepo.findOne({ where: { realmName } });
+    if (!realm) {
+      throw new NotFoundException(`Realm '${realmName}' not found`);
+    }
+    return realm.id;
+  }
 
   // ----- Clients -------------------------------------------------------------
 
