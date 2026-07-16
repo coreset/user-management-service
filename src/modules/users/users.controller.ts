@@ -15,6 +15,7 @@ import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
+import { UserPaginatedResponseDto } from './dto/user-paginated-response.dto';
 import { query } from 'winston';
 import { SearchUserDto } from './dto/search-role.dto';
 import { Permissions } from '../permission/decorators/permissions.decorator';
@@ -22,6 +23,7 @@ import { PermissionKey } from '../permission/constants/permission-key.enum';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthRequest } from '../auth/types/request';
 import { plainToInstance } from 'class-transformer';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 const ID_PARAM = {
   name: 'id',
@@ -65,11 +67,14 @@ export class UsersController {
   @Get()
   @ApiOperation({
     summary: 'List users',
-    description: 'Lists every non-deleted user, across all realms.',
+    description: 'Lists every non-deleted user, across all realms (paginated).',
   })
-  @ApiResponse({ status: 200, description: 'List of users.' })
-  findAll() {
-    return this.usersService.findAll();
+  @ApiResponse({ status: 200, description: 'Paginated list of users.' })
+  async findAll(@Query() query: PaginationQueryDto) {
+    const result = await this.usersService.findAllPaginated(query.page, query.limit, query.order);
+    return plainToInstance(UserPaginatedResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.USERS_READ])

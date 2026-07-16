@@ -17,9 +17,13 @@ import {
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 import { ClientsService } from './clients.service';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
+import { ClientResponseDto } from './dto/client-response.dto';
+import { ClientPaginatedResponseDto } from './dto/client-paginated-response.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { Permissions } from '../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../permission/constants/permission-key.enum';
 
@@ -58,20 +62,29 @@ export class ClientsController {
     @Body() createClientDto: CreateClientDto,
   ) {
     const realmId = await this.clientsService.resolveRealmId(realmName);
-    return this.clientsService.create(realmId, createClientDto);
+    const result = await this.clientsService.create(realmId, createClientDto);
+    return plainToInstance(ClientResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.CLIENTS_READ])
   @Get()
   @ApiOperation({
     summary: 'List clients',
-    description: 'Lists all clients registered within the given realm.',
+    description: 'Lists all clients registered within the given realm (paginated).',
   })
-  @ApiResponse({ status: 200, description: 'List of clients in the realm.' })
+  @ApiResponse({ status: 200, description: 'Paginated list of clients in the realm.' })
   @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
-  async findAll(@Param('realmName') realmName: string) {
+  async findAll(
+    @Param('realmName') realmName: string,
+    @Query() query: PaginationQueryDto,
+  ) {
     const realmId = await this.clientsService.resolveRealmId(realmName);
-    return this.clientsService.findAll(realmId);
+    const result = await this.clientsService.findAllPaginated(realmId, query.page, query.limit, query.order);
+    return plainToInstance(ClientPaginatedResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.CLIENTS_READ])
@@ -88,7 +101,10 @@ export class ClientsController {
     @Param('id', ParseUUIDPipe) id: string,
   ) {
     const realmId = await this.clientsService.resolveRealmId(realmName);
-    return this.clientsService.findOne(realmId, id);
+    const result = await this.clientsService.findOne(realmId, id);
+    return plainToInstance(ClientResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.CLIENTS_UPDATE])
@@ -106,7 +122,10 @@ export class ClientsController {
     @Body() updateClientDto: UpdateClientDto,
   ) {
     const realmId = await this.clientsService.resolveRealmId(realmName);
-    return this.clientsService.update(realmId, id, updateClientDto);
+    const result = await this.clientsService.update(realmId, id, updateClientDto);
+    return plainToInstance(ClientResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.CLIENTS_DELETE])

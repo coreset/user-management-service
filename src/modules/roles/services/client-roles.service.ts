@@ -63,6 +63,29 @@ export class ClientRolesService {
     return this.clientRoleRepo.find({ where: { client: { id: client.id } } });
   }
 
+  async listClientRolesPaginated(
+    realmId: string,
+    clientId: string,
+    page: number = 1,
+    limit: number = 10,
+  ): Promise<any> {
+    const client = await this.clientsService.findOne(realmId, clientId);
+    const [data, total] = await this.clientRoleRepo.findAndCount({
+      where: { client: { id: client.id } },
+      skip: (page - 1) * limit,
+      take: limit,
+    });
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async deleteClientRole(clientRoleId: string): Promise<{ message: string }> {
     const result = await this.clientRoleRepo.softDelete(clientRoleId);
     if (result.affected === 0) {

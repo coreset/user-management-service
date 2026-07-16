@@ -7,11 +7,16 @@ import {
   Param,
   Delete,
   ParseUUIDPipe,
+  Query,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 import { RealmsService } from './realms.service';
 import { CreateRealmDto } from './dto/create-realm.dto';
 import { UpdateRealmDto } from './dto/update-realm.dto';
+import { RealmResponseDto } from './dto/realm-response.dto';
+import { RealmPaginatedResponseDto } from './dto/realm-paginated-response.dto';
+import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { Permissions } from '../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../permission/constants/permission-key.enum';
 
@@ -36,19 +41,25 @@ export class RealmsController {
   })
   @ApiResponse({ status: 201, description: 'Realm created.' })
   @ApiResponse({ status: 409, description: "A realm with this realmName already exists." })
-  create(@Body() createRealmDto: CreateRealmDto) {
-    return this.realmsService.create(createRealmDto);
+  async create(@Body() createRealmDto: CreateRealmDto) {
+    const result = await this.realmsService.create(createRealmDto);
+    return plainToInstance(RealmResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.REALMS_READ])
   @Get()
   @ApiOperation({
     summary: 'List realms',
-    description: 'Lists every realm.',
+    description: 'Lists every realm (paginated).',
   })
-  @ApiResponse({ status: 200, description: 'List of realms.' })
-  findAll() {
-    return this.realmsService.findAll();
+  @ApiResponse({ status: 200, description: 'Paginated list of realms.' })
+  async findAll(@Query() query: PaginationQueryDto) {
+    const result = await this.realmsService.findAllPaginated(query.page, query.limit, query.order);
+    return plainToInstance(RealmPaginatedResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.REALMS_READ])
@@ -64,8 +75,11 @@ export class RealmsController {
     description: 'Name of the realm to fetch',
   })
   @ApiResponse({ status: 200, description: 'The requested realm, or null if no realm has this name.' })
-  findOne(@Param('realmName') realmName: string) {
-    return this.realmsService.findByName(realmName);
+  async findOne(@Param('realmName') realmName: string) {
+    const result = await this.realmsService.findByName(realmName);
+    return plainToInstance(RealmResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.REALMS_UPDATE])
@@ -77,11 +91,14 @@ export class RealmsController {
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'Realm updated.' })
   @ApiResponse({ status: 404, description: 'Realm not found.' })
-  update(
+  async update(
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateRealmDto: UpdateRealmDto,
   ) {
-    return this.realmsService.update(id, updateRealmDto);
+    const result = await this.realmsService.update(id, updateRealmDto);
+    return plainToInstance(RealmResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.REALMS_DELETE])

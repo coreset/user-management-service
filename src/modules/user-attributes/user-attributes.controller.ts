@@ -8,8 +8,10 @@ import {
   ParseUUIDPipe,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 import { UserAttributesService } from './user-attributes.service';
 import { SetAttributeDto } from './dto/set-attribute.dto';
+import { UserAttributeResponseDto } from './dto/user-attribute-response.dto';
 import { Permissions } from '../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../permission/constants/permission-key.enum';
 
@@ -41,8 +43,11 @@ export class UserAttributesController {
   })
   @ApiParam(USER_ID_PARAM)
   @ApiResponse({ status: 200, description: "List of the user's effective attributes." })
-  list(@Param('userId', ParseUUIDPipe) userId: string) {
-    return this.userAttributesService.list(userId);
+  async list(@Param('userId', ParseUUIDPipe) userId: string) {
+    const result = await this.userAttributesService.list(userId);
+    return plainToInstance(UserAttributeResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Put(':key')
@@ -54,12 +59,15 @@ export class UserAttributesController {
   @ApiParam(KEY_PARAM)
   @ApiResponse({ status: 200, description: 'Attribute saved.' })
   @ApiResponse({ status: 400, description: 'Not an allowed attribute key, or value fails validation for its value type.' })
-  set(
+  async set(
     @Param('userId', ParseUUIDPipe) userId: string,
     @Param('key') key: string,
     @Body() dto: SetAttributeDto,
   ) {
-    return this.userAttributesService.set(userId, key, dto.value);
+    const result = await this.userAttributesService.set(userId, key, dto.value);
+    return plainToInstance(UserAttributeResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Delete(':key')
@@ -71,10 +79,13 @@ export class UserAttributesController {
   @ApiResponse({ status: 200, description: 'Attribute removed.' })
   @ApiResponse({ status: 400, description: 'Attribute is required and cannot be removed.' })
   @ApiResponse({ status: 404, description: 'Attribute not set for this user.' })
-  remove(
+  async remove(
     @Param('userId', ParseUUIDPipe) userId: string,
     @Param('key') key: string,
   ) {
-    return this.userAttributesService.remove(userId, key);
+    const result = await this.userAttributesService.remove(userId, key);
+    return plainToInstance(UserAttributeResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 }

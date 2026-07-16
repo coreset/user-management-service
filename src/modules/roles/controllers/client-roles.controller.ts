@@ -9,9 +9,12 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { plainToInstance } from 'class-transformer';
 import { ClientRolesService } from '../services/client-roles.service';
 import { CreateClientRoleDto } from '../../clients/dto/create-client-role.dto';
 import { AssignPermissionsDto } from '../dto/assign-permissions.dto';
+import { RoleResponseDto } from '../dto/role-response.dto';
+import { RolePaginatedResponseDto } from '../dto/role-paginated-response.dto';
 import { Permissions } from '../../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../../permission/constants/permission-key.enum';
 import { RealmsService } from '../../realms/realms.service';
@@ -69,23 +72,31 @@ export class ClientRolesController {
     @Body() dto: CreateClientRoleDto,
   ) {
     const realmId = await this.resolveRealmId(realmName);
-    return this.clientRolesService.createClientRole(realmId, clientId, dto);
+    const result = await this.clientRolesService.createClientRole(realmId, clientId, dto);
+    return plainToInstance(RoleResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.CLIENT_ROLES_READ])
   @Get()
   @ApiOperation({
     summary: 'List client roles',
-    description: 'Lists all roles defined on the given client.',
+    description: 'Lists all roles defined on the given client (paginated).',
   })
-  @ApiResponse({ status: 200, description: 'List of client roles.' })
+  @ApiResponse({ status: 200, description: 'Paginated list of client roles.' })
   @ApiResponse({ status: 404, description: 'Realm not found, or client not found in this realm.' })
   async findAll(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
+    @Query('page') page: number = 1,
+    @Query('limit') limit: number = 10,
   ) {
     const realmId = await this.resolveRealmId(realmName);
-    return this.clientRolesService.listClientRoles(realmId, clientId);
+    const result = await this.clientRolesService.listClientRolesPaginated(realmId, clientId, page, limit);
+    return plainToInstance(RolePaginatedResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.CLIENT_ROLES_DELETE])
@@ -118,12 +129,15 @@ export class ClientRolesController {
     @Param('userId', ParseUUIDPipe) userId: string,
   ) {
     const realmId = await this.resolveRealmId(realmName);
-    return this.clientRolesService.assignClientRoleToUser(
+    const result = await this.clientRolesService.assignClientRoleToUser(
       realmId,
       clientId,
       userId,
       clientRoleId,
     );
+    return plainToInstance(RoleResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.CLIENT_ROLES_ASSIGN_USERS])
@@ -158,12 +172,15 @@ export class ClientRolesController {
     @Body() dto: AssignPermissionsDto,
   ) {
     const realmId = await this.resolveRealmId(realmName);
-    return this.clientRolesService.addPermissionsToClientRole(
+    const result = await this.clientRolesService.addPermissionsToClientRole(
       realmId,
       clientId,
       clientRoleId,
       dto.permissionIds,
     );
+    return plainToInstance(RoleResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.CLIENT_ROLES_READ])
@@ -178,11 +195,14 @@ export class ClientRolesController {
     @Param('clientRoleId', ParseUUIDPipe) clientRoleId: string,
   ) {
     const realmId = await this.resolveRealmId(realmName);
-    return this.clientRolesService.listClientRolePermissions(
+    const result = await this.clientRolesService.listClientRolePermissions(
       realmId,
       clientId,
       clientRoleId,
     );
+    return plainToInstance(RoleResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.CLIENT_ROLES_ASSIGN_PERMISSIONS])

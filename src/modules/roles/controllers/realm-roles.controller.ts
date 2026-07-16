@@ -10,9 +10,12 @@ import {
   Query,
   NotFoundException,
 } from '@nestjs/common';
+import { plainToInstance } from 'class-transformer';
 import { RealmRolesService } from '../services/realm-roles.service';
 import { CreateRoleDto } from '../dto/create-role.dto';
 import { UpdateRoleDto } from '../dto/update-role.dto';
+import { RoleResponseDto } from '../dto/role-response.dto';
+import { RolePaginatedResponseDto } from '../dto/role-paginated-response.dto';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -81,7 +84,10 @@ export class RealmRolesController {
   ) {
     // Realm roles are scoped to the realm named in the path.
     const realmId = await this.resolveRealmId(realmName);
-    return this.realmRolesService.create(createRoleDto, realmId);
+    const result = await this.realmRolesService.create(createRoleDto, realmId);
+    return plainToInstance(RoleResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   // GET /realms/:realmName/roles — plain list, or filtered with ?name=...
@@ -95,8 +101,11 @@ export class RealmRolesController {
   @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
   @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Page size' })
   @ApiResponse({ status: 200, description: 'Paginated list of roles.' })
-  findAll(@Query() { name, page = 1, limit = 10 }: RoleQueryDto) {
-    return this.realmRolesService.findAllPaginated(page, limit, name);
+  async findAll(@Query() query: RoleQueryDto) {
+    const result = await this.realmRolesService.findAllPaginated(query.page, query.limit, query.name);
+    return plainToInstance(RolePaginatedResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.ROLES_READ])
@@ -105,7 +114,10 @@ export class RealmRolesController {
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'The requested role.' })
   findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.realmRolesService.findOne(id);
+    const result = this.realmRolesService.findOne(id);
+    return plainToInstance(RoleResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.ROLES_UPDATE])
@@ -114,7 +126,10 @@ export class RealmRolesController {
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'Role updated.' })
   update(@Param('id', ParseUUIDPipe) id: string, @Body() updateRoleDto: UpdateRoleDto) {
-    return this.realmRolesService.update(id, updateRoleDto);
+    const result = this.realmRolesService.update(id, updateRoleDto);
+    return plainToInstance(RoleResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.ROLES_DELETE])

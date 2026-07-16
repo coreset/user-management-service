@@ -136,6 +136,27 @@ export class RealmsService {
     return this.realmRepo.find();
   }
 
+  async findAllPaginated(
+    page: number = 1,
+    limit: number = 10,
+    order: 'asc' | 'desc' | 'ASC' | 'DESC' = 'DESC',
+  ): Promise<any> {
+    const [data, total] = await this.realmRepo.findAndCount({
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: order.toUpperCase() as 'ASC' | 'DESC' },
+    });
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   /** Resolves a realm by its (globally-unique) name; null if not found. */
   findByName(realmName: string): Promise<Realm | null> {
     return this.realmRepo.findOne({ where: { realmName } });

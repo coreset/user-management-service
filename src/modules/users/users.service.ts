@@ -60,6 +60,28 @@ export class UsersService {
     });
   }
 
+  async findAllPaginated(
+    page: number = 1,
+    limit: number = 10,
+    order: 'asc' | 'desc' | 'ASC' | 'DESC' = 'DESC',
+  ): Promise<any> {
+    const [data, total] = await this.UserRepo.findAndCount({
+      where: { deletedAt: IsNull() },
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: order.toUpperCase() as 'ASC' | 'DESC' },
+    });
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   findOne(id: string): Promise<User | null> {
     return this.UserRepo.findOne({ where: { id } });
   }
@@ -78,16 +100,19 @@ export class UsersService {
     limit: number = 10,
   ): Promise<any> {
     if (name && page && limit) {
-      const [items, total] = await this.UserRepo.findAndCount({
+      const [data, total] = await this.UserRepo.findAndCount({
         where: { firstName: name },
         skip: (page - 1) * limit,
         take: limit,
       });
       return {
-        data: items,
-        total,
-        page,
-        lastPage: Math.ceil(total / limit),
+        data,
+        meta: {
+          total,
+          page,
+          limit,
+          totalPages: Math.ceil(total / limit),
+        },
       };
     } else if (name && !page && !limit) {
       const item = await this.UserRepo.find({

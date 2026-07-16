@@ -92,6 +92,30 @@ export class PermissionService {
     });
   }
 
+  async findAllPaginated(
+    realmName: string,
+    page: number = 1,
+    limit: number = 10,
+    order: 'asc' | 'desc' | 'ASC' | 'DESC' = 'DESC',
+  ): Promise<any> {
+    const realmId = await this.resolveRealmId(realmName);
+    const [data, total] = await this.PermissionRepo.findAndCount({
+      where: { realm: { id: realmId } },
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: order.toUpperCase() as 'ASC' | 'DESC' },
+    });
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   findOne(id: string) {
     return `This action returns a #${id} permission`;
   }

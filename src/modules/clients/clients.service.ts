@@ -69,6 +69,29 @@ export class ClientsService {
     return this.clientRepo.find({ where: { realm: { id: realmId } } });
   }
 
+  async findAllPaginated(
+    realmId: string,
+    page: number = 1,
+    limit: number = 10,
+    order: 'asc' | 'desc' | 'ASC' | 'DESC' = 'DESC',
+  ): Promise<any> {
+    const [data, total] = await this.clientRepo.findAndCount({
+      where: { realm: { id: realmId } },
+      skip: (page - 1) * limit,
+      take: limit,
+      order: { createdAt: order.toUpperCase() as 'ASC' | 'DESC' },
+    });
+    return {
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
+    };
+  }
+
   async findOne(realmId: string, id: string): Promise<Client> {
     const client = await this.clientRepo.findOne({
       where: { id, realm: { id: realmId } },

@@ -98,7 +98,7 @@ export class RealmRolesService {
 
   /** Lists roles, optionally filtered by name (substring match). */
   async findAllPaginated(page: number, limit: number, name?: string): Promise<any> {
-    const [items, total] = await this.RoleRepo.findAndCount({
+    const [data, total] = await this.RoleRepo.findAndCount({
       where: name ? { name: Like(`%${name}%`) } : {},
       skip: (page - 1) * limit,
       take: limit,
@@ -106,10 +106,13 @@ export class RealmRolesService {
     });
 
     return {
-      data: items,
-      total,
-      page,
-      lastPage: Math.ceil(total / limit),
+      data,
+      meta: {
+        total,
+        page,
+        limit,
+        totalPages: Math.ceil(total / limit),
+      },
     };
   }
 
