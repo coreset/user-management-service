@@ -61,10 +61,7 @@ export class UsersService {
   }
 
   findOne(id: string): Promise<User | null> {
-    return this.UserRepo.findOne({
-      where: { id },
-      select: ['firstName', 'lastName', 'avatarUrl'],
-    });
+    return this.UserRepo.findOne({ where: { id } });
   }
 
   findByIdList(idList: string[], realmId?: string): Promise<any> {

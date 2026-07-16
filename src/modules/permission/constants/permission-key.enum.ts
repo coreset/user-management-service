@@ -8,6 +8,7 @@ export enum PermissionKey {
   USERS_CREATE = 'users:create',
   USERS_READ = 'users:read',
   USERS_DELETE = 'users:delete',
+  USERS_UPDATE = 'users:update',
   ROLES_CREATE = 'roles:create',
   ROLES_READ = 'roles:read',
   ROLES_UPDATE = 'roles:update',

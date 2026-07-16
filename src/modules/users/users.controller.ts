@@ -9,15 +9,19 @@ import {
   Delete,
   ParseUUIDPipe,
   Query,
+  Req,
 } from '@nestjs/common';
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UserResponseDto } from './dto/user-response.dto';
 import { query } from 'winston';
 import { SearchUserDto } from './dto/search-role.dto';
 import { Permissions } from '../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../permission/constants/permission-key.enum';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { AuthRequest } from '../auth/types/request';
+import { plainToInstance } from 'class-transformer';
 
 const ID_PARAM = {
   name: 'id',
@@ -68,6 +72,7 @@ export class UsersController {
     return this.usersService.findAll();
   }
 
+  @Permissions([PermissionKey.USERS_READ])
   @Get('search')
   @ApiOperation({
     summary: 'Search users by first name',
@@ -84,17 +89,31 @@ export class UsersController {
 
   }
 
+  @Get('me')
+  @ApiOperation({
+    summary: 'Get the current authenticated user',
+    description: "Returns the authenticated user's own profile, resolved from the access token.",
+  })
+  @ApiResponse({ status: 200, description: "The authenticated user's profile.", type: UserResponseDto })
+  async findMe(@Req() req: AuthRequest) {
+    const user = await this.usersService.findOne(req.user.id);
+    return plainToInstance(UserResponseDto, user, { excludeExtraneousValues: true });
+  }
+
+  @Permissions([PermissionKey.USERS_READ])
   @Get(':id')
   @ApiOperation({
     summary: 'Get a user by id',
-    description: "Fetches a user's public profile fields (firstName, lastName, avatarUrl) by UUID.",
+    description: "Fetches a user's profile by UUID.",
   })
   @ApiParam(ID_PARAM)
-  @ApiResponse({ status: 200, description: 'The requested user, or null if no user has this id.' })
-  findOne(@Param('id', ParseUUIDPipe) id: string) {
-    return this.usersService.findOne(id);
+  @ApiResponse({ status: 200, description: 'The requested user, or null if no user has this id.', type: UserResponseDto })
+  async findOne(@Param('id', ParseUUIDPipe) id: string) {
+    const user = await this.usersService.findOne(id);
+    return plainToInstance(UserResponseDto, user, { excludeExtraneousValues: true });
   }
 
+  @Permissions([PermissionKey.USERS_UPDATE])
   @Put(':id')
   @ApiOperation({
     summary: 'Replace a user',
@@ -114,7 +133,7 @@ export class UsersController {
   //update(@Param('id') id: string, @Body() updateUserDto: UpdateUserDto) {
   //  return this.usersService.update(+id, updateUserDto);
   //}
-
+  @Permissions([PermissionKey.USERS_DELETE])
   @Delete(':id')
   @ApiOperation({ summary: 'Delete a user' })
   @ApiParam(ID_PARAM)
@@ -123,6 +142,7 @@ export class UsersController {
     return this.usersService.remove(id);
   }
 
+  @Permissions([PermissionKey.USERS_UPDATE])
   @Post(':id/restore')
   @ApiOperation({
     summary: 'Restore a soft-deleted user',
