@@ -56,11 +56,12 @@ export class UsersController {
   @ApiResponse({ status: 201, description: 'User created.' })
   @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
   @ApiResponse({ status: 409, description: 'Email already exists.' })
-  create(
+  async create(
     @Param('realmName') realmName: string,
     @Body() createUserDto: CreateUserDto,
   ) {
-    return this.usersService.create(createUserDto, realmName);
+    const result = await this.usersService.create(createUserDto, realmName);
+    return plainToInstance(UserResponseDto, result, { excludeExtraneousValues: true });
   }
 
   @Permissions([PermissionKey.USERS_READ])
