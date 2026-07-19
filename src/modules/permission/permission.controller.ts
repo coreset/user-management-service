@@ -7,6 +7,7 @@ import {
   Param,
   Delete,
   Query,
+  Req,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
@@ -18,6 +19,7 @@ import { PermissionPaginatedResponseDto } from './dto/permission-paginated-respo
 import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 import { Permissions } from './decorators/permissions.decorator';
 import { PermissionKey } from './constants/permission-key.enum';
+import type { AuthRequest } from '../auth/types/request';
 
 const ID_PARAM = {
   name: 'id',
@@ -108,5 +110,21 @@ export class PermissionController {
   @ApiResponse({ status: 200, description: 'Permission deleted.' })
   remove(@Param('id') id: string) {
     return this.permissionService.remove(id);
+  }
+}
+
+@ApiTags('Me')
+@Controller('me')
+@ApiBearerAuth('authorization')
+export class MeController {
+  @Get('permissions')
+  @ApiOperation({
+    summary: "Get the current user's effective permissions",
+    description:
+      "Returns the flattened permission keys granted to the authenticated user across their realm and client roles (already resolved onto req.user by the auth guard, no extra query needed).",
+  })
+  @ApiResponse({ status: 200, description: 'The permission keys granted to the current user.' })
+  getMyPermissions(@Req() req: AuthRequest) {
+    return { permissions: req.user.permissions ?? [] };
   }
 }

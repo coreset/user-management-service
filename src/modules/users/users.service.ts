@@ -46,7 +46,7 @@ export class UsersService {
         error instanceof QueryFailedError &&
         (error as any).errno === 1062 // MySQL duplicate entry
       ) {
-        throw new ConflictException('Email already exists');
+        throw new ConflictException('Email or Username already exists');
       }
 
       throw new InternalServerErrorException('Failed to create user');
