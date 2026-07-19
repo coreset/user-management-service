@@ -1,10 +1,15 @@
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 /** Shape returned by GET /users/:id and GET /users/me. */
 export class UserResponseDto {
   @ApiProperty({ description: 'UUID of the user' })
   @Expose() id: string;
+
+  @ApiProperty({ description: 'Name of the realm the user belongs to' })
+  @Expose()
+  @Transform(({ obj }) => obj.realm?.realmName, { toClassOnly: true })
+  realmName: string;
 
   @ApiProperty({ description: 'Username' })
   @Expose() username: string;

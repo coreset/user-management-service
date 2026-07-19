@@ -103,6 +103,7 @@ export class RealmRolesService {
       skip: (page - 1) * limit,
       take: limit,
       withDeleted: false,
+      relations: ['realm'],
     });
 
     return {

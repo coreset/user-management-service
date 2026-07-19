@@ -80,6 +80,7 @@ export class ClientsService {
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: order.toUpperCase() as 'ASC' | 'DESC' },
+      relations: ['realm'],
     });
     return {
       data,

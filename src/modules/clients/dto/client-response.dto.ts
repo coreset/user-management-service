@@ -1,10 +1,15 @@
-import { Expose } from 'class-transformer';
+import { Expose, Transform } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class ClientResponseDto {
   @ApiProperty({ description: 'UUID of the client' })
   @Expose()
   id: string;
+
+  @ApiProperty({ description: 'Name of the realm the client belongs to' })
+  @Expose()
+  @Transform(({ obj }) => obj.realm?.realmName, { toClassOnly: true })
+  realmName: string;
 
   @ApiProperty({ description: 'Client identifier' })
   @Expose()

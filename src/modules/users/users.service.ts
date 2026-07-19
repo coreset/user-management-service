@@ -102,7 +102,7 @@ export class UsersService {
   }
 
   findOne(id: string): Promise<User | null> {
-    return this.UserRepo.findOne({ where: { id } });
+    return this.UserRepo.findOne({ where: { id }, relations: ['realm'] });
   }
 
   findByIdList(idList: string[], realmId?: string): Promise<any> {
