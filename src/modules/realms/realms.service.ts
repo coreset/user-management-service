@@ -141,12 +141,18 @@ export class RealmsService {
     limit: number = 10,
     order: 'asc' | 'desc' | 'ASC' | 'DESC' = 'DESC',
     search?: string,
+    isActive?: boolean,
   ): Promise<any> {
     const where: any = {};
 
     // Search by realm name if provided
     if (search?.trim()) {
       where.realmName = Like(`%${search}%`);
+    }
+
+    // Filter by active status if provided
+    if (isActive !== undefined) {
+      where.isActive = isActive;
     }
 
     const [data, total] = await this.realmRepo.findAndCount({

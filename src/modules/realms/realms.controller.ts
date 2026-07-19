@@ -58,6 +58,7 @@ export class RealmsController {
   @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page (max 100)' })
   @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
   @ApiQuery({ name: 'search', required: false, example: 'master', description: 'Search by realm name (wildcard)' })
+  @ApiQuery({ name: 'isActive', required: false, example: true, type: Boolean, description: 'Filter by active status' })
   @ApiResponse({ status: 200, description: 'Paginated list of realms.' })
   async findAll(@Query() queryDto: RealmQueryDto) {
     const result = await this.realmsService.findAllPaginated(
@@ -65,6 +66,7 @@ export class RealmsController {
       queryDto.limit,
       queryDto.order,
       queryDto.search,
+      queryDto.isActive,
     );
     return plainToInstance(RealmPaginatedResponseDto, result, {
       excludeExtraneousValues: true,
