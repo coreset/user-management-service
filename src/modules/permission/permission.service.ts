@@ -103,7 +103,7 @@ export class PermissionService {
       where: { realm: { id: realmId } },
       skip: (page - 1) * limit,
       take: limit,
-      order: { createdAt: order.toUpperCase() as 'ASC' | 'DESC' },
+      order: { id: order.toUpperCase() as 'ASC' | 'DESC' },
     });
     return {
       data,

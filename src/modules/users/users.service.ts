@@ -10,7 +10,7 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Realm } from '../realms/entities/realm.entity';
-import { Repository, QueryFailedError, IsNull, In } from 'typeorm';
+import { Repository, QueryFailedError, IsNull, In, Like } from 'typeorm';
 import { randomBytes } from 'crypto';
 import { RealmsService } from '../realms/realms.service';
 
@@ -64,12 +64,31 @@ export class UsersService {
     page: number = 1,
     limit: number = 10,
     order: 'asc' | 'desc' | 'ASC' | 'DESC' = 'DESC',
+    realmId?: string,
+    realmName?: string,
+    search?: string,
   ): Promise<any> {
+    const where: any = { deletedAt: IsNull() };
+
+    // Filter by realm if provided
+    if (realmId) {
+      where.realm = { id: realmId };
+    } else if (realmName) {
+      where.realm = { realmName };
+    }
+
+    // Search by username or email if provided
+    if (search?.trim()) {
+      where.username = Like(`%${search}%`);
+      // Note: Using Like for simple search; could be improved with full-text search
+    }
+
     const [data, total] = await this.UserRepo.findAndCount({
-      where: { deletedAt: IsNull() },
+      where,
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: order.toUpperCase() as 'ASC' | 'DESC' },
+      relations: ['realm'],
     });
     return {
       data,

@@ -9,14 +9,14 @@ import {
   ParseUUIDPipe,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { RealmsService } from './realms.service';
 import { CreateRealmDto } from './dto/create-realm.dto';
 import { UpdateRealmDto } from './dto/update-realm.dto';
 import { RealmResponseDto } from './dto/realm-response.dto';
 import { RealmPaginatedResponseDto } from './dto/realm-paginated-response.dto';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { RealmQueryDto } from './dto/realm-query.dto';
 import { Permissions } from '../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../permission/constants/permission-key.enum';
 
@@ -52,11 +52,20 @@ export class RealmsController {
   @Get()
   @ApiOperation({
     summary: 'List realms',
-    description: 'Lists every realm (paginated).',
+    description: 'Lists every realm (paginated), optionally filtered by realm name.',
   })
+  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
+  @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page (max 100)' })
+  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
+  @ApiQuery({ name: 'search', required: false, example: 'master', description: 'Search by realm name (wildcard)' })
   @ApiResponse({ status: 200, description: 'Paginated list of realms.' })
-  async findAll(@Query() query: PaginationQueryDto) {
-    const result = await this.realmsService.findAllPaginated(query.page, query.limit, query.order);
+  async findAll(@Query() queryDto: RealmQueryDto) {
+    const result = await this.realmsService.findAllPaginated(
+      queryDto.page,
+      queryDto.limit,
+      queryDto.order,
+      queryDto.search,
+    );
     return plainToInstance(RealmPaginatedResponseDto, result, {
       excludeExtraneousValues: true,
     });

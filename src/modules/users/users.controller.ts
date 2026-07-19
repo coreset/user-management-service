@@ -16,6 +16,7 @@ import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { UserPaginatedResponseDto } from './dto/user-paginated-response.dto';
+import { UserQueryDto } from './dto/user-query.dto';
 import { query } from 'winston';
 import { SearchUserDto } from './dto/search-role.dto';
 import { Permissions } from '../permission/decorators/permissions.decorator';
@@ -23,7 +24,6 @@ import { PermissionKey } from '../permission/constants/permission-key.enum';
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { AuthRequest } from '../auth/types/request';
 import { plainToInstance } from 'class-transformer';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
 
 const ID_PARAM = {
   name: 'id',
@@ -67,21 +67,38 @@ export class UsersController {
   @Get()
   @ApiOperation({
     summary: 'List users',
-    description: 'Lists every non-deleted user, across all realms (paginated).',
+    description: 'Lists every non-deleted user, optionally filtered by realm (paginated).',
   })
+  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
+  @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page (max 100)' })
+  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
+  @ApiQuery({ name: 'realmId', required: false, example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479', description: 'Filter by realm ID' })
+  @ApiQuery({ name: 'realmName', required: false, example: 'master', description: 'Filter by realm name (alternative to realmId)' })
+  @ApiQuery({ name: 'search', required: false, example: 'john', description: 'Search by username or email' })
   @ApiResponse({ status: 200, description: 'Paginated list of users.' })
-  async findAll(@Query() query: PaginationQueryDto) {
-    const result = await this.usersService.findAllPaginated(query.page, query.limit, query.order);
+  async findAll(@Query() queryDto: UserQueryDto) {
+    const result = await this.usersService.findAllPaginated(
+      queryDto.page,
+      queryDto.limit,
+      queryDto.order,
+      queryDto.realmId,
+      queryDto.realmName,
+      queryDto.search,
+    );
     return plainToInstance(UserPaginatedResponseDto, result, {
       excludeExtraneousValues: true,
     });
   }
 
+  /**
+   * @TODO remove - Use GET /users?search=... instead
+   */
   @Permissions([PermissionKey.USERS_READ])
   @Get('search')
   @ApiOperation({
-    summary: 'Search users by first name',
-    description: 'Searches users by first name; paginates only when both page and limit are supplied.',
+    summary: 'Search users by first name (Deprecated)',
+    description: 'Searches users by first name; paginates only when both page and limit are supplied. DEPRECATED: Use GET /users?search=... instead.',
+    deprecated: true,
   })
   @ApiQuery({ name: 'name', required: true, example: 'firstname', description: 'First name to search for' })
   @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })

@@ -6,8 +6,9 @@ import {
   Patch,
   Param,
   Delete,
+  Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { PermissionService } from './permission.service';
 import { CreatePermissionDto } from './dto/create-permission.dto';
@@ -61,6 +62,9 @@ export class PermissionController {
     summary: 'List permissions',
     description: "Lists every permission in the realm's catalog (paginated).",
   })
+  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
+  @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page (max 100)' })
+  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
   @ApiResponse({ status: 200, description: 'Paginated list of permissions in the realm.' })
   @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
   async findAll(

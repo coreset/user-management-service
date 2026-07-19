@@ -7,8 +7,9 @@ import {
   Delete,
   ParseUUIDPipe,
   NotFoundException,
+  Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { ClientRolesService } from '../services/client-roles.service';
 import { CreateClientRoleDto } from '../../clients/dto/create-client-role.dto';
@@ -84,6 +85,9 @@ export class ClientRolesController {
     summary: 'List client roles',
     description: 'Lists all roles defined on the given client (paginated).',
   })
+  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
+  @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page (max 100)' })
+  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
   @ApiResponse({ status: 200, description: 'Paginated list of client roles.' })
   @ApiResponse({ status: 404, description: 'Realm not found, or client not found in this realm.' })
   async findAll(

@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Repository, Like } from 'typeorm';
 import { createPublicKey } from 'crypto';
 import { Realm } from './entities/realm.entity';
 import { RealmKey } from './entities/realm-key.entity';
@@ -140,8 +140,17 @@ export class RealmsService {
     page: number = 1,
     limit: number = 10,
     order: 'asc' | 'desc' | 'ASC' | 'DESC' = 'DESC',
+    search?: string,
   ): Promise<any> {
+    const where: any = {};
+
+    // Search by realm name if provided
+    if (search?.trim()) {
+      where.realmName = Like(`%${search}%`);
+    }
+
     const [data, total] = await this.realmRepo.findAndCount({
+      where,
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: order.toUpperCase() as 'ASC' | 'DESC' },

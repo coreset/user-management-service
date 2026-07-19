@@ -9,11 +9,13 @@ import {
   ParseUUIDPipe,
   HttpCode,
   HttpStatus,
+  Query,
 } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiOperation,
   ApiParam,
+  ApiQuery,
   ApiResponse,
   ApiTags,
 } from '@nestjs/swagger';
@@ -74,14 +76,17 @@ export class ClientsController {
     summary: 'List clients',
     description: 'Lists all clients registered within the given realm (paginated).',
   })
+  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
+  @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page (max 100)' })
+  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
   @ApiResponse({ status: 200, description: 'Paginated list of clients in the realm.' })
   @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
   async findAll(
     @Param('realmName') realmName: string,
-    @Query() query: PaginationQueryDto,
+    @Query() queryDto: PaginationQueryDto,
   ) {
     const realmId = await this.clientsService.resolveRealmId(realmName);
-    const result = await this.clientsService.findAllPaginated(realmId, query.page, query.limit, query.order);
+    const result = await this.clientsService.findAllPaginated(realmId, queryDto.page, queryDto.limit, queryDto.order);
     return plainToInstance(ClientPaginatedResponseDto, result, {
       excludeExtraneousValues: true,
     });
