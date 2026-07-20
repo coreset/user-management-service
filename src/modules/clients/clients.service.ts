@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { Repository } from 'typeorm';
+import { Like, Repository } from 'typeorm';
 import { randomBytes } from 'crypto';
 import { CreateClientDto } from './dto/create-client.dto';
 import { UpdateClientDto } from './dto/update-client.dto';
@@ -74,9 +74,19 @@ export class ClientsService {
     page: number = 1,
     limit: number = 10,
     order: 'asc' | 'desc' | 'ASC' | 'DESC' = 'DESC',
+    search?: string,
   ): Promise<any> {
+    // Search by client name or clientId, scoped to the realm (OR across the two
+    // fields, each branch still AND-ed with the realm filter).
+    const where = search?.trim()
+      ? [
+          { realm: { id: realmId }, name: Like(`%${search}%`) },
+          { realm: { id: realmId }, clientId: Like(`%${search}%`) },
+        ]
+      : { realm: { id: realmId } };
+
     const [data, total] = await this.clientRepo.findAndCount({
-      where: { realm: { id: realmId } },
+      where,
       skip: (page - 1) * limit,
       take: limit,
       order: { createdAt: order.toUpperCase() as 'ASC' | 'DESC' },
