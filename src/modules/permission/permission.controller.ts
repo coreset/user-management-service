@@ -16,7 +16,7 @@ import { CreatePermissionDto } from './dto/create-permission.dto';
 import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { PermissionResponseDto } from './dto/permission-response.dto';
 import { PermissionPaginatedResponseDto } from './dto/permission-paginated-response.dto';
-import { PaginationQueryDto } from '../../common/dto/pagination-query.dto';
+import { PermissionQueryDto } from './dto/permission-query.dto';
 import { Permissions } from './decorators/permissions.decorator';
 import { PermissionKey } from './constants/permission-key.enum';
 import type { AuthRequest } from '../auth/types/request';
@@ -67,13 +67,20 @@ export class PermissionController {
   @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
   @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page (max 100)' })
   @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
+  @ApiQuery({ name: 'search', required: false, example: 'invoice', description: 'Search by permission name' })
   @ApiResponse({ status: 200, description: 'Paginated list of permissions in the realm.' })
   @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
   async findAll(
     @Param('realmName') realmName: string,
-    @Query() query: PaginationQueryDto,
+    @Query() query: PermissionQueryDto,
   ) {
-    const result = await this.permissionService.findAllPaginated(realmName, query.page, query.limit, query.order);
+    const result = await this.permissionService.findAllPaginated(
+      realmName,
+      query.page,
+      query.limit,
+      query.order,
+      query.search,
+    );
     return plainToInstance(PermissionPaginatedResponseDto, result, {
       excludeExtraneousValues: true,
     });
@@ -84,8 +91,9 @@ export class PermissionController {
   @ApiOperation({ summary: 'Get a permission by id' })
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'The requested permission.' })
-  async findOne(@Param('id') id: string) {
-    const result = await this.permissionService.findOne(id);
+  @ApiResponse({ status: 404, description: 'Permission not found in this realm.' })
+  async findOne(@Param('realmName') realmName: string, @Param('id') id: string) {
+    const result = await this.permissionService.findOne(realmName, id);
     return plainToInstance(PermissionResponseDto, result, {
       excludeExtraneousValues: true,
     });
@@ -96,8 +104,14 @@ export class PermissionController {
   @ApiOperation({ summary: 'Update a permission' })
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'Permission updated.' })
-  async update(@Param('id') id: string, @Body() updatePermissionDto: UpdatePermissionDto) {
-    const result = await this.permissionService.update(id, updatePermissionDto);
+  @ApiResponse({ status: 403, description: 'System permissions cannot be renamed.' })
+  @ApiResponse({ status: 404, description: 'Permission not found in this realm.' })
+  async update(
+    @Param('realmName') realmName: string,
+    @Param('id') id: string,
+    @Body() updatePermissionDto: UpdatePermissionDto,
+  ) {
+    const result = await this.permissionService.update(realmName, id, updatePermissionDto);
     return plainToInstance(PermissionResponseDto, result, {
       excludeExtraneousValues: true,
     });
@@ -108,8 +122,11 @@ export class PermissionController {
   @ApiOperation({ summary: 'Delete a permission' })
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'Permission deleted.' })
-  remove(@Param('id') id: string) {
-    return this.permissionService.remove(id);
+  @ApiResponse({ status: 403, description: 'System permissions cannot be deleted.' })
+  @ApiResponse({ status: 404, description: 'Permission not found in this realm.' })
+  @ApiResponse({ status: 409, description: 'Permission is still assigned to one or more roles.' })
+  remove(@Param('realmName') realmName: string, @Param('id') id: string) {
+    return this.permissionService.remove(realmName, id);
   }
 }
 

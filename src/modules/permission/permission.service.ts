@@ -1,5 +1,6 @@
 import {
   ConflictException,
+  ForbiddenException,
   Injectable,
   InternalServerErrorException,
   NotFoundException,
@@ -9,7 +10,7 @@ import { UpdatePermissionDto } from './dto/update-permission.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Permission } from './entities/permission.entity';
 import { Realm } from '../realms/entities/realm.entity';
-import { In, Repository } from 'typeorm';
+import { In, Like, Repository } from 'typeorm';
 import { AppLoggerService } from 'src/common/logger/logger.service';
 
 @Injectable()
@@ -97,13 +98,20 @@ export class PermissionService {
     page: number = 1,
     limit: number = 10,
     order: 'asc' | 'desc' | 'ASC' | 'DESC' = 'DESC',
+    search?: string,
   ): Promise<any> {
     const realmId = await this.resolveRealmId(realmName);
+    const baseWhere: any = { realm: { id: realmId } };
+    const where = search?.trim()
+      ? { ...baseWhere, name: Like(`%${search}%`) }
+      : baseWhere;
+
     const [data, total] = await this.PermissionRepo.findAndCount({
-      where: { realm: { id: realmId } },
+      where,
       skip: (page - 1) * limit,
       take: limit,
       order: { id: order.toUpperCase() as 'ASC' | 'DESC' },
+      relations: ['realm'],
     });
     return {
       data,
@@ -116,16 +124,49 @@ export class PermissionService {
     };
   }
 
-  findOne(id: string) {
-    return `This action returns a #${id} permission`;
+  async findOne(realmName: string, id: string): Promise<Permission> {
+    const realmId = await this.resolveRealmId(realmName);
+    const permission = await this.PermissionRepo.findOne({
+      where: { id, realm: { id: realmId } },
+    });
+    if (!permission) {
+      throw new NotFoundException(`Permission with id ${id} not found in this realm`);
+    }
+    return permission;
   }
 
-  update(id: string, updatePermissionDto: UpdatePermissionDto) {
-    return `This action updates a #${id} permission`;
+  async update(
+    realmName: string,
+    id: string,
+    updatePermissionDto: UpdatePermissionDto, // update name only
+  ): Promise<Permission> {
+    const permission = await this.findOne(realmName, id);
+    if (permission.isSystem) {
+      throw new ForbiddenException('System permissions cannot be renamed');
+    }
+    Object.assign(permission, updatePermissionDto);
+    return this.PermissionRepo.save(permission);
   }
 
-  remove(id: string) {
-    return `This action removes a #${id} permission`;
+  async remove(realmName: string, id: string): Promise<{ message: string }> {
+    const realmId = await this.resolveRealmId(realmName);
+    const permission = await this.PermissionRepo.findOne({
+      where: { id, realm: { id: realmId } },
+      relations: ['realmRoles', 'clientRoles'],
+    });
+    if (!permission) {
+      throw new NotFoundException(`Permission with id ${id} not found in this realm`);
+    }
+    if (permission.isSystem) {
+      throw new ForbiddenException('System permissions cannot be deleted');
+    }
+    if (permission.realmRoles.length > 0 || permission.clientRoles.length > 0) {
+      throw new ConflictException(
+        'Permission is currently assigned to one or more roles; unassign it first',
+      );
+    }
+    await this.PermissionRepo.softDelete(id);
+    return { message: 'Permission deleted successfully' };
   }
 
   /** Loads permissions by id, restricted to the given realm. */

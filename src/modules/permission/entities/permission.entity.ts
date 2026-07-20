@@ -24,6 +24,9 @@ export class Permission {
   @Column({ name: 'name' })
   name: string;
 
+  @Column({ name: 'is_system', default: false })
+  isSystem: boolean;
+
   @DeleteDateColumn({ name: 'deleted_at' })
   @Exclude()
   deletedAt: Date;

@@ -73,9 +73,13 @@ export class PermissionsSeeder implements Seeder {
       });
       if (!permission) {
         permission = await permissionRepo.save(
-          permissionRepo.create({ name, realm: { id: realm.id } as Realm }),
+          permissionRepo.create({ name, realm: { id: realm.id } as Realm, isSystem: true }),
         );
         // console.log(`Permission '${name}' created in realm '${realm.realmName}'`);
+      } else if (!permission.isSystem) {
+        // Backfill for permissions seeded before isSystem existed.
+        permission.isSystem = true;
+        permission = await permissionRepo.save(permission);
       }
       permissionsByName.set(name, permission);
     }
