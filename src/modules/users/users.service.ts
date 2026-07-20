@@ -68,20 +68,23 @@ export class UsersService {
     realmName?: string,
     search?: string,
   ): Promise<any> {
-    const where: any = { deletedAt: IsNull() };
+    const baseWhere: any = { deletedAt: IsNull() };
 
     // Filter by realm if provided
     if (realmId) {
-      where.realm = { id: realmId };
+      baseWhere.realm = { id: realmId };
     } else if (realmName) {
-      where.realm = { realmName };
+      baseWhere.realm = { realmName };
     }
 
-    // Search by username or email if provided
-    if (search?.trim()) {
-      where.username = Like(`%${search}%`);
-      // Note: Using Like for simple search; could be improved with full-text search
-    }
+    // Search across username, email, first name, and last name if provided
+    // (OR across fields, each branch still AND-ed with the realm/deletedAt filters above).
+    const where = search?.trim()
+      ? ['username', 'email', 'firstName', 'lastName'].map((field) => ({
+          ...baseWhere,
+          [field]: Like(`%${search}%`),
+        }))
+      : baseWhere;
 
     const [data, total] = await this.UserRepo.findAndCount({
       where,

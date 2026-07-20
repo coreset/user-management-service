@@ -24,7 +24,7 @@ export class UserQueryDto extends PaginationQueryDto {
   @IsString()
   @ApiPropertyOptional({
     example: 'john',
-    description: 'Search by username or email',
+    description: 'Search by username, email, first name, or last name',
   })
   search?: string;
 }

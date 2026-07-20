@@ -17,7 +17,6 @@ import { UpdateUserDto } from './dto/update-user.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { UserPaginatedResponseDto } from './dto/user-paginated-response.dto';
 import { UserQueryDto } from './dto/user-query.dto';
-import { query } from 'winston';
 import { SearchUserDto } from './dto/search-role.dto';
 import { Permissions } from '../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../permission/constants/permission-key.enum';
@@ -75,7 +74,7 @@ export class UsersController {
   @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
   @ApiQuery({ name: 'realmId', required: false, example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479', description: 'Filter by realm ID' })
   @ApiQuery({ name: 'realmName', required: false, example: 'master', description: 'Filter by realm name (alternative to realmId)' })
-  @ApiQuery({ name: 'search', required: false, example: 'john', description: 'Search by username or email' })
+  @ApiQuery({ name: 'search', required: false, example: 'john', description: 'Search by username, email, first name, or last name' })
   @ApiResponse({ status: 200, description: 'Paginated list of users.' })
   async findAll(@Query() queryDto: UserQueryDto) {
     const result = await this.usersService.findAllPaginated(
