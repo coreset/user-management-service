@@ -1,37 +1,14 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { IsInt, IsOptional, IsString, Min } from 'class-validator';
+import { ApiPropertyOptional } from '@nestjs/swagger';
+import { IsOptional, IsString } from 'class-validator';
+import { PaginationQueryDto } from '../../../common/dto/pagination-query.dto';
 
-/** Query params for GET /roles — optional `name` filters, otherwise lists all. */
-export class RoleQueryDto {
-  @ApiProperty({
-    name: 'name',
-    required: false,
-    example: 'ADMIN',
-  })
+/** Query params for GET /realms/:realmName/roles. */
+export class RoleQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsString()
-  name?: string;
-
-  @ApiProperty({
-    name: 'page',
-    required: false,
-    example: 1,
+  @ApiPropertyOptional({
+    example: 'ADMIN',
+    description: 'Search by role name (wildcard)',
   })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  page: number = 1;
-
-  @ApiProperty({
-    name: 'limit',
-    required: false,
-    example: 10,
-  })
-  @IsOptional()
-  @Type(() => Number)
-  @IsInt()
-  @Min(1)
-  limit: number = 10;
+  search?: string;
 }

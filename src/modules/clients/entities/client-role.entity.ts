@@ -18,10 +18,6 @@ import { UserClientRole } from './user-client-role.entity';
 import { Permission } from '../../permission/entities/permission.entity';
 import { Audited } from '../../../common/audit/audited.decorator';
 
-/**
- * since we are not use role base access and only check permission and permission base access,
- * we don't need to role name unique to role because permission already unique to the realm. 
- */
 @Audited()
 @Entity('client_roles')
 @Unique(['client', 'name'])

@@ -97,13 +97,23 @@ export class RealmRolesController {
     summary: 'List realm roles',
     description: 'Lists roles, paginated, optionally filtered by a name substring.',
   })
-  @ApiQuery({ name: 'name', required: false, example: 'ADMIN', description: 'Substring filter on role name' })
+  @ApiQuery({ name: 'search', required: false, example: 'ADMIN', description: 'Substring filter on role name' })
   @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
   @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page (max 100)' })
   @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
   @ApiResponse({ status: 200, description: 'Paginated list of roles.' })
-  async findAll(@Query() query: RoleQueryDto) {
-    const result = await this.realmRolesService.findAllPaginated(query.page, query.limit, query.name);
+  async findAll(
+    @Param('realmName') realmName: string,
+    @Query() queryDto: RoleQueryDto,
+  ) {
+    const realmId = await this.resolveRealmId(realmName);
+    const result = await this.realmRolesService.findAllPaginated(
+      realmId,
+      queryDto.page,
+      queryDto.limit,
+      queryDto.order,
+      queryDto.search,
+    );
     return plainToInstance(RolePaginatedResponseDto, result, {
       excludeExtraneousValues: true,
     });

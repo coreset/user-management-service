@@ -4,7 +4,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { In, Repository } from 'typeorm';
+import { In, Like, Repository } from 'typeorm';
 import { CreateClientRoleDto } from '../../clients/dto/create-client-role.dto';
 import { ClientRole } from '../../clients/entities/client-role.entity';
 import { UserClientRole } from '../../clients/entities/user-client-role.entity';
@@ -63,17 +63,25 @@ export class ClientRolesService {
     return this.clientRoleRepo.find({ where: { client: { id: client.id } } });
   }
 
-  async listClientRolesPaginated(
+  async findAllPaginated(
     realmId: string,
     clientId: string,
     page: number = 1,
     limit: number = 10,
+    order: 'asc' | 'desc' | 'ASC' | 'DESC' = 'DESC',
+    search?: string,
   ): Promise<any> {
     const client = await this.clientsService.findOne(realmId, clientId);
+    const where = search?.trim()
+      ? { client: { id: client.id }, name: Like(`%${search}%`) } // load client-roles for selected client with filer by role name
+      : { client: { id: client.id } }; // load client-roles for selected client.
+
     const [data, total] = await this.clientRoleRepo.findAndCount({
-      where: { client: { id: client.id } },
+      where,
       skip: (page - 1) * limit,
       take: limit,
+      order: { createdAt: order.toUpperCase() as 'ASC' | 'DESC' },
+      relations: ['realm'],
     });
     return {
       data,

@@ -96,12 +96,24 @@ export class RealmRolesService {
     });
   }
 
-  /** Lists roles, optionally filtered by name (substring match). */
-  async findAllPaginated(page: number, limit: number, name?: string): Promise<any> {
+  /** Lists roles scoped to a realm, optionally filtered by name (substring match). */
+  async findAllPaginated(
+    realmId: string,
+    page: number,
+    limit: number,
+    order: 'asc' | 'desc' | 'ASC' | 'DESC' = 'DESC',
+    search?: string,
+  ): Promise<any> {
+    const where: any = { realm: { id: realmId } };
+    if (search) {
+      where.name = Like(`%${search}%`);
+    }
+
     const [data, total] = await this.RoleRepo.findAndCount({
-      where: name ? { name: Like(`%${name}%`) } : {},
+      where,
       skip: (page - 1) * limit,
       take: limit,
+      order: { name: order.toUpperCase() as 'ASC' | 'DESC' },
       withDeleted: false,
       relations: ['realm'],
     });

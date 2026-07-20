@@ -75,15 +75,21 @@ export class ClientsService {
     limit: number = 10,
     order: 'asc' | 'desc' | 'ASC' | 'DESC' = 'DESC',
     search?: string,
+    isActive?: boolean,
   ): Promise<any> {
-    // Search by client name or clientId, scoped to the realm (OR across the two
-    // fields, each branch still AND-ed with the realm filter).
+    const baseWhere: any = { realm: { id: realmId } };
+    if (isActive !== undefined) {
+      baseWhere.isActive = isActive;
+    }
+
+    // Search by client name or clientId (OR across the two fields, each
+    // branch still AND-ed with the realm/isActive filters above).
     const where = search?.trim()
       ? [
-          { realm: { id: realmId }, name: Like(`%${search}%`) },
-          { realm: { id: realmId }, clientId: Like(`%${search}%`) },
+          { ...baseWhere, name: Like(`%${search}%`) },
+          { ...baseWhere, clientId: Like(`%${search}%`) },
         ]
-      : { realm: { id: realmId } };
+      : baseWhere;
 
     const [data, total] = await this.clientRepo.findAndCount({
       where,

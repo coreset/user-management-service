@@ -16,6 +16,7 @@ import { CreateClientRoleDto } from '../../clients/dto/create-client-role.dto';
 import { AssignPermissionsDto } from '../dto/assign-permissions.dto';
 import { RoleResponseDto } from '../dto/role-response.dto';
 import { RolePaginatedResponseDto } from '../dto/role-paginated-response.dto';
+import { ClientRoleQueryDto } from '../dto/client-role-query.dto';
 import { Permissions } from '../../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../../permission/constants/permission-key.enum';
 import { RealmsService } from '../../realms/realms.service';
@@ -88,16 +89,23 @@ export class ClientRolesController {
   @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
   @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page (max 100)' })
   @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
+  @ApiQuery({ name: 'search', required: false, example: 'Admin', description: 'Search by client role name' })
   @ApiResponse({ status: 200, description: 'Paginated list of client roles.' })
   @ApiResponse({ status: 404, description: 'Realm not found, or client not found in this realm.' })
   async findAll(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
-    @Query('page') page: number = 1,
-    @Query('limit') limit: number = 10,
+    @Query() queryDto: ClientRoleQueryDto,
   ) {
     const realmId = await this.resolveRealmId(realmName);
-    const result = await this.clientRolesService.listClientRolesPaginated(realmId, clientId, page, limit);
+    const result = await this.clientRolesService.findAllPaginated(
+      realmId,
+      clientId,
+      queryDto.page,
+      queryDto.limit,
+      queryDto.order,
+      queryDto.search,
+    );
     return plainToInstance(RolePaginatedResponseDto, result, {
       excludeExtraneousValues: true,
     });
