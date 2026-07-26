@@ -5,13 +5,14 @@ import {
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { In, Like, Repository } from 'typeorm';
-import { CreateClientRoleDto } from '../../clients/dto/create-client-role.dto';
+import { CreateClientRoleDto } from '../dto/create-client-role.dto';
 import { ClientRole } from '../../clients/entities/client-role.entity';
 import { UserClientRole } from '../../clients/entities/user-client-role.entity';
 import { Realm } from '../../realms/entities/realm.entity';
 import { User } from '../../users/entities/user.entity';
 import { Permission } from '../../permission/entities/permission.entity';
 import { ClientsService } from '../../clients/clients.service';
+import { UsersService } from '../../users/users.service';
 
 /**
  * Owns client-role logic: roles defined per client, their assignment to users
@@ -28,6 +29,7 @@ export class ClientRolesService {
     @InjectRepository(Permission)
     private readonly permissionRepo: Repository<Permission>,
     private readonly clientsService: ClientsService,
+    private readonly usersService: UsersService,
   ) {}
 
   // ----- Client roles --------------------------------------------------------
@@ -137,6 +139,47 @@ export class ClientRolesService {
       clientRole,
     });
     return this.userClientRoleRepo.save(assignment);
+  }
+
+  // return users for given client's role in it own relam
+  async listClientRoleUsers(
+    realmId: string,
+    clientId: string,
+    clientRoleId: string,
+  ): Promise<User[]> {
+    const client = await this.clientsService.findOne(realmId, clientId);
+    const clientRole = await this.clientRoleRepo.findOne({
+      where: { id: clientRoleId, client: { id: client.id } },
+    });
+    if (!clientRole) {
+      throw new NotFoundException(
+        `Client role ${clientRoleId} not found on this client`,
+      );
+    }
+
+    const assignments = await this.userClientRoleRepo.find({
+      where: { clientRole: { id: clientRoleId } },
+      relations: ['user'],
+    });
+    return assignments.map((assignment) => assignment.user);
+  }
+
+  /** Lists the client roles (across all clients) currently assigned to a given user. */
+  /** Lists the client roles currently assigned to a given user, for this client. */
+  async findRolesForUser(
+    realmId: string,
+    clientId: string,
+    userId: string,
+  ): Promise<UserClientRole[]> {
+    const user = await this.usersService.findOne(userId);
+    if (!user) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+    const client = await this.clientsService.findOne(realmId, clientId);
+    return this.userClientRoleRepo.find({
+      where: { user: { id: userId }, client: { id: client.id } },
+      relations: ['clientRole', 'clientRole.realm', 'client'],
+    });
   }
 
   async unassignClientRoleFromUser(

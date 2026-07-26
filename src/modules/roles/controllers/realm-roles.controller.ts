@@ -12,10 +12,12 @@ import {
 } from '@nestjs/common';
 import { plainToInstance } from 'class-transformer';
 import { RealmRolesService } from '../services/realm-roles.service';
-import { CreateRoleDto } from '../dto/create-role.dto';
-import { UpdateRoleDto } from '../dto/update-role.dto';
+import { CreateRealmRoleDto } from '../dto/create-realm-role.dto';
+import { UpdateRealmRoleDto } from '../dto/update-realm-role.dto';
 import { RoleResponseDto } from '../dto/role-response.dto';
 import { RolePaginatedResponseDto } from '../dto/role-paginated-response.dto';
+import { PermissionResponseDto } from '../../permission/dto/permission-response.dto';
+import { UserResponseDto } from '../../users/dto/user-response.dto';
 import {
   ApiBearerAuth,
   ApiOperation,
@@ -26,7 +28,7 @@ import {
 } from '@nestjs/swagger';
 import { Permissions } from '../../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../../permission/constants/permission-key.enum';
-import { RoleQueryDto } from '../dto/role-query.dto';
+import { RealmRoleQueryDto } from '../dto/realm-role-query.dto';
 import { AssignUsersDto } from '../dto/assign-users.dto';
 import { AssignPermissionsDto } from '../dto/assign-permissions.dto';
 import { RealmsService } from '../../realms/realms.service';
@@ -43,6 +45,13 @@ const ROLE_ID_PARAM = {
   required: true,
   format: 'uuid',
   description: 'UUID of the realm role',
+} as const;
+
+const USER_ID_PARAM = {
+  name: 'userId',
+  required: true,
+  format: 'uuid',
+  description: 'UUID of the user',
 } as const;
 
 @ApiTags('Realm Roles')
@@ -80,7 +89,7 @@ export class RealmRolesController {
   @ApiResponse({ status: 409, description: 'A role with this name already exists in this realm.' })
   async create(
     @Param('realmName') realmName: string,
-    @Body() createRoleDto: CreateRoleDto,
+    @Body() createRoleDto: CreateRealmRoleDto,
   ) {
     // Realm roles are scoped to the realm named in the path.
     const realmId = await this.resolveRealmId(realmName);
@@ -104,7 +113,7 @@ export class RealmRolesController {
   @ApiResponse({ status: 200, description: 'Paginated list of roles.' })
   async findAll(
     @Param('realmName') realmName: string,
-    @Query() queryDto: RoleQueryDto,
+    @Query() queryDto: RealmRoleQueryDto,
   ) {
     const realmId = await this.resolveRealmId(realmName);
     const result = await this.realmRolesService.findAllPaginated(
@@ -131,12 +140,36 @@ export class RealmRolesController {
     });
   }
 
+  @Permissions([PermissionKey.ROLES_READ])
+  @Get(':id/permissions')
+  @ApiOperation({ summary: 'List permissions granted by a realm role' })
+  @ApiParam(ID_PARAM)
+  @ApiResponse({ status: 200, description: 'List of permissions granted by the realm role.' })
+  async listPermissions(@Param('id', ParseUUIDPipe) id: string) {
+    const result = await this.realmRolesService.listPermissions(id);
+    return plainToInstance(PermissionResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  @Permissions([PermissionKey.ROLES_READ])
+  @Get(':id/users')
+  @ApiOperation({ summary: 'List users assigned to a realm role' })
+  @ApiParam(ID_PARAM)
+  @ApiResponse({ status: 200, description: 'List of users assigned to the realm role.' })
+  async listUsers(@Param('id', ParseUUIDPipe) id: string) {
+    const result = await this.realmRolesService.listUsers(id);
+    return plainToInstance(UserResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
+  }
+
   @Permissions([PermissionKey.ROLES_UPDATE])
   @Patch(':id')
   @ApiOperation({ summary: 'Update a realm role' })
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'Role updated.' })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateRoleDto: UpdateRoleDto) {
+  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateRoleDto: UpdateRealmRoleDto) {
     const result = this.realmRolesService.update(id, updateRoleDto);
     return plainToInstance(RoleResponseDto, result, {
       excludeExtraneousValues: true,
@@ -245,5 +278,23 @@ export class RealmRolesController {
     @Param('permissionId', ParseUUIDPipe) permissionId: string,
   ) {
     return this.realmRolesService.unassignPermissionsFromRole(roleId, [permissionId]);
+  }
+
+  // ----- Realm roles for a given user -----------------------------------------
+  @Permissions([PermissionKey.USERS_READ])
+  @Get('users/:userId')
+  @ApiOperation({
+    summary: "List a user's realm roles",
+    description: 'Returns the realm roles currently assigned to this user, within this realm.',
+  })
+  @ApiParam(USER_ID_PARAM)
+  @ApiResponse({ status: 200, description: "The user's realm roles." })
+  async listForUser(
+    @Param('realmName') realmName: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+  ) {
+    const realmId = await this.resolveRealmId(realmName);
+    const result = await this.realmRolesService.findRolesForUser(realmId, userId);
+    return plainToInstance(RoleResponseDto, result, { excludeExtraneousValues: true });
   }
 }

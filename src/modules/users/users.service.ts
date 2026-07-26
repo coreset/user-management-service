@@ -18,7 +18,7 @@ import { RealmsService } from '../realms/realms.service';
 export class UsersService {
   constructor(
     private readonly realmsService: RealmsService,
-    @InjectRepository(User) private UserRepo: Repository<User>
+    @InjectRepository(User) private UserRepo: Repository<User>,
   ) {}
 
   async create(createUserDto: CreateUserDto, realmName: string): Promise<User> {

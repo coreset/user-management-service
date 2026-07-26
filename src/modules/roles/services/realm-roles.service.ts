@@ -1,6 +1,6 @@
 import { BadRequestException, ConflictException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
-import { CreateRoleDto } from '../dto/create-role.dto';
-import { UpdateRoleDto } from '../dto/update-role.dto';
+import { CreateRealmRoleDto } from '../dto/create-realm-role.dto';
+import { UpdateRealmRoleDto } from '../dto/update-realm-role.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { RealmRole } from '../entities/realm-role.entity';
 import { UserRealmRole } from '../entities/user-realm-role.entity';
@@ -25,7 +25,7 @@ export class RealmRolesService {
     private readonly permissionService: PermissionService,
   ) {}
 
-  //async create(createRoleDto: CreateRoleDto): Promise<RealmRole | null> {
+  //async create(createRoleDto: CreateRealmRoleDto): Promise<RealmRole | null> {
   //  const role = this.RoleRepo.create(createRoleDto);
   //  try {
   //    const savedRole = await this.RoleRepo.save(role);
@@ -42,7 +42,7 @@ export class RealmRolesService {
   //}
 
   async create(
-    createRoleDto: CreateRoleDto,
+    createRoleDto: CreateRealmRoleDto,
     realmId: string,
   ): Promise<RealmRole | null> {
     try {
@@ -133,7 +133,45 @@ export class RealmRolesService {
     return `This action returns a #${id} role`;
   }
 
-  update(id: string, updateRoleDto: UpdateRoleDto) {
+  // list of permissions to realm role
+  async listPermissions(roleId: string): Promise<Permission[]> {
+    const role = await this.RoleRepo.findOne({
+      where: { id: roleId },
+      relations: ['permissions'],
+    });
+    if (!role) {
+      throw new NotFoundException(`Role with id ${roleId} not found`);
+    }
+    return role.permissions;
+  }
+
+  // list of users that assign to given reaml role id
+  async listUsers(roleId: string): Promise<User[]> {
+    const role = await this.RoleRepo.findOne({ where: { id: roleId } });
+    if (!role) {
+      throw new NotFoundException(`Role with id ${roleId} not found`);
+    }
+    const assignments = await this.UserRealmRoleRepo.find({
+      where: { realmRole: { id: roleId } },
+      relations: ['user'],
+    });
+    return assignments.map((assignment) => assignment.user);
+  }
+
+  /** Lists the realm roles currently assigned to a given user, within this realm. */
+  async findRolesForUser(realmId: string, userId: string): Promise<RealmRole[]> {
+    const user = await this.usersService.findOne(userId);
+    if (!user) {
+      throw new NotFoundException(`User with id ${userId} not found`);
+    }
+    const assignments = await this.UserRealmRoleRepo.find({
+      where: { user: { id: userId }, realm: { id: realmId } },
+      relations: ['realmRole', 'realmRole.realm'],
+    });
+    return assignments.map((assignment) => assignment.realmRole);
+  }
+
+  update(id: string, updateRoleDto: UpdateRealmRoleDto) {
     return `This action updates a #${id} role`;
   }
 

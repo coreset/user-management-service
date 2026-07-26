@@ -28,7 +28,10 @@ import { ClientsModule } from '../clients/clients.module';
     RealmsModule,
     ClientsModule,
   ],
-  controllers: [RealmRolesController, ClientRolesController],
+  controllers: [
+    RealmRolesController,
+    ClientRolesController,
+  ],
   providers: [RealmRolesService, ClientRolesService],
   exports: [RealmRolesService, ClientRolesService],
 })

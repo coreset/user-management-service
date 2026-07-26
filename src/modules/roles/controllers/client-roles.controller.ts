@@ -12,11 +12,14 @@ import {
 import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { ClientRolesService } from '../services/client-roles.service';
-import { CreateClientRoleDto } from '../../clients/dto/create-client-role.dto';
+import { CreateClientRoleDto } from '../dto/create-client-role.dto';
 import { AssignPermissionsDto } from '../dto/assign-permissions.dto';
 import { RoleResponseDto } from '../dto/role-response.dto';
 import { RolePaginatedResponseDto } from '../dto/role-paginated-response.dto';
 import { ClientRoleQueryDto } from '../dto/client-role-query.dto';
+import { ClientRoleResponseDto } from '../dto/client-role-response.dto';
+import { PermissionResponseDto } from '../../permission/dto/permission-response.dto';
+import { UserResponseDto } from '../../users/dto/user-response.dto';
 import { Permissions } from '../../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../../permission/constants/permission-key.enum';
 import { RealmsService } from '../../realms/realms.service';
@@ -26,6 +29,13 @@ const CLIENT_ROLE_ID_PARAM = {
   required: true,
   format: 'uuid',
   description: 'UUID of the client role',
+} as const;
+
+const USER_ID_PARAM = {
+  name: 'userId',
+  required: true,
+  format: 'uuid',
+  description: 'UUID of the user',
 } as const;
 
 @ApiTags('Client Roles')
@@ -212,7 +222,29 @@ export class ClientRolesController {
       clientId,
       clientRoleId,
     );
-    return plainToInstance(RoleResponseDto, result, {
+    return plainToInstance(PermissionResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
+  }
+
+  @Permissions([PermissionKey.CLIENT_ROLES_READ])
+  @Get(':clientRoleId/users')
+  @ApiOperation({ summary: 'List users assigned to a client role' })
+  @ApiParam(CLIENT_ROLE_ID_PARAM)
+  @ApiResponse({ status: 200, description: 'List of users assigned to the client role.' })
+  @ApiResponse({ status: 404, description: 'Realm, client, or client role not found.' })
+  async listUsers(
+    @Param('realmName') realmName: string,
+    @Param('clientId', ParseUUIDPipe) clientId: string,
+    @Param('clientRoleId', ParseUUIDPipe) clientRoleId: string,
+  ) {
+    const realmId = await this.resolveRealmId(realmName);
+    const result = await this.clientRolesService.listClientRoleUsers(
+      realmId,
+      clientId,
+      clientRoleId,
+    );
+    return plainToInstance(UserResponseDto, result, {
       excludeExtraneousValues: true,
     });
   }
@@ -237,5 +269,31 @@ export class ClientRolesController {
       clientRoleId,
       permissionId,
     );
+  }
+
+  // ----- Client roles for a given user -----------------------------------------
+  @Permissions([PermissionKey.USERS_READ])
+  @Get('users/:userId')
+  @ApiOperation({
+    summary: "List a user's client roles",
+    description: 'Returns the client roles currently assigned to this user, for this client.',
+  })
+  @ApiParam(USER_ID_PARAM)
+  @ApiResponse({ status: 200, description: "The user's client roles for this client." })
+  async listForUser(
+    @Param('realmName') realmName: string,
+    @Param('clientId', ParseUUIDPipe) clientId: string,
+    @Param('userId', ParseUUIDPipe) userId: string,
+  ) {
+    const realmId = await this.resolveRealmId(realmName);
+    const assignments = await this.clientRolesService.findRolesForUser(realmId, clientId, userId);
+    const result = assignments.map((assignment) => ({
+      id: assignment.clientRole.id,
+      name: assignment.clientRole.name,
+      realmName: assignment.clientRole.realm?.realmName,
+      clientId: assignment.client.id,
+      clientName: assignment.client.name,
+    }));
+    return plainToInstance(ClientRoleResponseDto, result, { excludeExtraneousValues: true });
   }
 }
