@@ -15,6 +15,7 @@ import { SettingsModule } from './modules/settings/settings.module';
 import { UserAttributesModule } from './modules/user-attributes/user-attributes.module';
 import { AuditModule } from './common/audit/audit.module';
 import { DashboardModule } from './modules/dashboard/dashboard.module';
+import { SessionsModule } from './modules/sessions/sessions.module';
 
 @Module({
   imports: [
@@ -76,6 +77,7 @@ import { DashboardModule } from './modules/dashboard/dashboard.module';
     UserAttributesModule,
     AuditModule,
     DashboardModule,
+    SessionsModule,
   ],
   controllers: [AppController],
   providers: [AppService],

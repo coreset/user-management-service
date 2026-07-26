@@ -47,4 +47,7 @@ export enum PermissionKey {
   PERMISSIONS_DELETE = 'permissions:delete',
   /** View the realm overview dashboard (aggregate counts across other modules). */
   DASHBOARD_READ = 'dashboard:read',
+  SESSIONS_READ = 'sessions:read',
+  /** Revoke (sign out) a user's SSO session. */
+  SESSIONS_REVOKE = 'sessions:revoke',
 }
