@@ -45,4 +45,6 @@ export enum PermissionKey {
   PERMISSIONS_READ = 'permissions:read',
   PERMISSIONS_UPDATE = 'permissions:update',
   PERMISSIONS_DELETE = 'permissions:delete',
+  /** View the realm overview dashboard (aggregate counts across other modules). */
+  DASHBOARD_READ = 'dashboard:read',
 }

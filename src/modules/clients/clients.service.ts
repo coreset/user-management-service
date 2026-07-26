@@ -69,6 +69,15 @@ export class ClientsService {
     return this.clientRepo.find({ where: { realm: { id: realmId } } });
   }
 
+  /** Total/active client counts for a realm (used by the dashboard). */
+  async countByRealm(realmId: string): Promise<{ total: number; active: number }> {
+    const [total, active] = await Promise.all([
+      this.clientRepo.count({ where: { realm: { id: realmId } } }),
+      this.clientRepo.count({ where: { realm: { id: realmId }, isActive: true } }),
+    ]);
+    return { total, active };
+  }
+
   async findAllPaginated(
     realmId: string,
     page: number = 1,

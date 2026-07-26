@@ -14,6 +14,7 @@ import { RealmsModule } from './modules/realms/realms.module';
 import { SettingsModule } from './modules/settings/settings.module';
 import { UserAttributesModule } from './modules/user-attributes/user-attributes.module';
 import { AuditModule } from './common/audit/audit.module';
+import { DashboardModule } from './modules/dashboard/dashboard.module';
 
 @Module({
   imports: [
@@ -74,6 +75,7 @@ import { AuditModule } from './common/audit/audit.module';
     SettingsModule,
     UserAttributesModule,
     AuditModule,
+    DashboardModule,
   ],
   controllers: [AppController],
   providers: [AppService],

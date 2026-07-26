@@ -65,6 +65,11 @@ export class ClientRolesService {
     return this.clientRoleRepo.find({ where: { client: { id: client.id } } });
   }
 
+  /** Total client-role count across every client in a realm (used by the dashboard). */
+  countByRealm(realmId: string): Promise<number> {
+    return this.clientRoleRepo.count({ where: { realm: { id: realmId } } });
+  }
+
   async findAllPaginated(
     realmId: string,
     clientId: string,

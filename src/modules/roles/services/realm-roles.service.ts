@@ -96,6 +96,11 @@ export class RealmRolesService {
     });
   }
 
+  /** Total realm-role count for a realm (used by the dashboard). */
+  countByRealm(realmId: string): Promise<number> {
+    return this.RoleRepo.count({ where: { realm: { id: realmId } } });
+  }
+
   /** Lists roles scoped to a realm, optionally filtered by name (substring match). */
   async findAllPaginated(
     realmId: string,

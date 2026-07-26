@@ -36,6 +36,7 @@ const REALM_ADMIN_PERMISSIONS: PermissionKey[] = [
   // ROLES_ASSIGN_PERMISSIONS.
   PermissionKey.SETTINGS_MANAGE,
   PermissionKey.USER_ATTRIBUTES_MANAGE,
+  PermissionKey.DASHBOARD_READ,
 ];
 
 /**

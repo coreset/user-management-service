@@ -60,6 +60,15 @@ export class UsersService {
     });
   }
 
+  /** Total/active/inactive user counts for a realm (used by the dashboard). */
+  async countByRealm(realmId: string): Promise<{ total: number; active: number; inactive: number }> {
+    const [total, active] = await Promise.all([
+      this.UserRepo.count({ where: { realm: { id: realmId } } }),
+      this.UserRepo.count({ where: { realm: { id: realmId }, isActive: true } }),
+    ]);
+    return { total, active, inactive: total - active };
+  }
+
   async findAllPaginated(
     page: number = 1,
     limit: number = 10,

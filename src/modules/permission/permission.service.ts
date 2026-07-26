@@ -93,6 +93,11 @@ export class PermissionService {
     });
   }
 
+  /** Total permission-catalog count for a realm (used by the dashboard). */
+  countByRealm(realmId: string): Promise<number> {
+    return this.PermissionRepo.count({ where: { realm: { id: realmId } } });
+  }
+
   async findAllPaginated(
     realmName: string,
     page: number = 1,
