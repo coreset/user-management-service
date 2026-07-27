@@ -14,6 +14,7 @@ import {
 import { UsersService } from './users.service';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
 import { UserResponseDto } from './dto/user-response.dto';
 import { UserPaginatedResponseDto } from './dto/user-paginated-response.dto';
 import { UserQueryDto } from './dto/user-query.dto';
@@ -119,6 +120,17 @@ export class UsersController {
   @ApiResponse({ status: 200, description: "The authenticated user's profile.", type: UserResponseDto })
   async findMe(@Req() req: AuthRequest) {
     const user = await this.usersService.findOne(req.user.id);
+    return plainToInstance(UserResponseDto, user, { excludeExtraneousValues: true });
+  }
+
+  @Patch('me')
+  @ApiOperation({
+    summary: "Update the current user's own profile",
+    description: 'Self-service profile edit — only name/avatar, no username, email, password, or status change.',
+  })
+  @ApiResponse({ status: 200, description: 'Profile updated.', type: UserResponseDto })
+  async updateMe(@Req() req: AuthRequest, @Body() dto: UpdateMyProfileDto) {
+    const user = await this.usersService.updateOwnProfile(req.user.id, dto);
     return plainToInstance(UserResponseDto, user, { excludeExtraneousValues: true });
   }
 

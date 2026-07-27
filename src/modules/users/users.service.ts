@@ -7,6 +7,7 @@ import {
 } from '@nestjs/common';
 import { CreateUserDto } from './dto/create-user.dto';
 import { UpdateUserDto } from './dto/update-user.dto';
+import { UpdateMyProfileDto } from './dto/update-my-profile.dto';
 import { InjectRepository } from '@nestjs/typeorm';
 import { User } from './entities/user.entity';
 import { Realm } from '../realms/entities/realm.entity';
@@ -198,6 +199,16 @@ export class UsersService {
     if (result.affected === 0) {
       throw new NotFoundException(`User with id ${id} not found or not deleted`);
     }
+  }
+
+  /** Self-service profile update — narrower field set than the admin `update`. */
+  async updateOwnProfile(id: string, dto: UpdateMyProfileDto): Promise<User> {
+    const user = await this.UserRepo.findOne({ where: { id } });
+    if (!user) {
+      throw new NotFoundException('User not found');
+    }
+    Object.assign(user, dto);
+    return this.UserRepo.save(user);
   }
 
   async update(id: string, updateUserDto: UpdateUserDto) {
