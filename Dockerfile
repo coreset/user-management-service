@@ -1,31 +1,27 @@
-# Use Node.js official image
-FROM node:22.14.0-slim
-
-# Set working directory
+# ---------- 1. Build Stage ----------
+FROM node:22.14.0-slim AS builder
 WORKDIR /app
 
-# Copy package.json and install dependencies
-# COPY package*.json ./
-COPY package.json ./
-COPY yarn.lock ./
+COPY package.json yarn.lock ./
+RUN yarn install --frozen-lockfile
 
-# Instal dependencies  
-#RUN npm install --only=production
-RUN yarn install --frozen-lockfile  
-
-# Ensure NestJS CLI is installed in node_modules
-# RUN npm install @nestjs/cli --save-dev
-RUN yarn add @nestjs/cli --save-dev
-
-# Copy source files
 COPY . .
-
-# Build the project
-# RUN npm run build
 RUN yarn build
 
-# Expose the application port
-EXPOSE 3000
+# ---------- 2. Runtime Stage ----------
+FROM node:22.14.0-slim AS runner
+WORKDIR /app
+ENV NODE_ENV=production
 
-# Start the application
-CMD ["node", "dist/main"]
+COPY package.json yarn.lock ./
+COPY --from=builder /app/node_modules ./node_modules
+RUN yarn install --frozen-lockfile --production --ignore-scripts --prefer-offline
+
+COPY --from=builder /app/dist ./dist
+
+# Run as the built-in non-root `node` user (uid 1000) instead of root
+RUN chown -R node:node /app
+USER node
+
+EXPOSE 3000
+CMD ["node", "dist/main.js"]
