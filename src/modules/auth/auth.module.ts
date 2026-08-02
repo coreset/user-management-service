@@ -2,7 +2,9 @@ import { Module } from '@nestjs/common';
 import { APP_GUARD } from '@nestjs/core';
 import { AuthService } from './auth.service';
 import { AuthController } from './auth.controller';
+import { OidcTokenController } from './oidc-token.controller';
 import { UsersModule } from '../users/users.module';
+import { ClientsModule } from '../clients/clients.module';
 import { RolesGuard } from '../roles/guards/roles/roles.guard';
 import { PermissionsGuard } from '../permission/guards/permissions.guard';
 import { JwtModule } from '@nestjs/jwt';
@@ -43,8 +45,9 @@ import { SettingsModule } from '../settings/settings.module';
     SettingsModule,
     RealmsModule, // provides RealmsService for RS256 signing + key lookup
     AuditModule, // provides AuditService for auth-event logging
+    ClientsModule, // provides ClientsService for the OIDC token endpoint's client validation
   ],
-  controllers: [AuthController],
+  controllers: [AuthController, OidcTokenController],
   providers: [
     AuthService,
     JwtStrategy,

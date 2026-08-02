@@ -2,6 +2,7 @@ import {
   ConflictException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Like, Repository } from 'typeorm';
@@ -32,6 +33,17 @@ export class ClientsService {
   }
 
   // ----- Clients -------------------------------------------------------------
+
+  /** Looks up a client by its client_id within a realm — used by the OAuth2 token endpoint. */
+  async findByClientId(realmId: string, clientId: string): Promise<Client> {
+    const client = await this.clientRepo.findOne({
+      where: { clientId, realm: { id: realmId } },
+    });
+    if (!client) {
+      throw new UnauthorizedException('invalid_client');
+    }
+    return client;
+  }
 
   async create(realmId: string, dto: CreateClientDto): Promise<Client> {
     const existing = await this.clientRepo.findOne({
