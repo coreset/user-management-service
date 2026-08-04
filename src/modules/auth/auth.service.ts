@@ -339,6 +339,27 @@ export class AuthService {
   //  };
   //}
 
+  /**
+   * Exchanges a raw refresh token (OIDC token endpoint, grant_type=refresh_token)
+   * for a new access/refresh pair. The caller has no authenticated req.user (unlike
+   * /auth/refresh, which relies on the refresh-jwt guard for that), so this decodes
+   * the token itself to find the owning user, then reuses the same DB-hash
+   * validation + rotation as the guarded route.
+   */
+  async refreshTokenByRawToken(oldRefreshToken: string) {
+    const secret = this.configService.get<string>('REFRESH_JWT_SECRET', '');
+    let payload: AuthJwtPayload;
+    try {
+      payload = this.jwtService.verify<AuthJwtPayload>(oldRefreshToken, { secret });
+    } catch {
+      throw new UnauthorizedException('invalid_grant');
+    }
+    if (!payload.sub) {
+      throw new UnauthorizedException('invalid_grant');
+    }
+    return this.refreshToken(payload.sub, oldRefreshToken);
+  }
+
   async refreshToken(userId: string, oldRefreshToken: string) {
     const user = await this.userService.findById(userId);
     if (!user) throw new NotFoundException('User not found');

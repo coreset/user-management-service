@@ -1,16 +1,11 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsIn, IsNotEmpty, IsOptional, IsString } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 /**
- * OAuth2 Resource Owner Password Credentials grant body, submitted as
- * application/x-www-form-urlencoded — mirrors Keycloak's token endpoint so
- * existing password-grant clients (e.g. pawn-backend) work unmodified.
+ * Body for POST /realms/:realmName/protocol/openid-connect/access-token —
+ * form-encoded, matching Keycloak's password-grant token request.
  */
-export class OidcTokenDto {
-  @ApiProperty({ example: 'password' })
-  @IsIn(['password'])
-  grant_type!: string;
-
+export class AccessTokenRequestDto {
   @ApiProperty({ example: 'pawn-backend' })
   @IsString()
   @IsNotEmpty()

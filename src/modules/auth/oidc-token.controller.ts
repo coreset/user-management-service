@@ -1,30 +1,26 @@
-import {
-  BadRequestException,
-  Body,
-  Controller,
-  Param,
-  Post,
-  Req,
-  UnauthorizedException,
-} from '@nestjs/common';
+import { Body, Controller, Param, Post, Req, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { parseExpiry } from '../../common/utils/time.util';
 import { AuthService } from './auth.service';
+import { Client } from '../clients/entities/client.entity';
 import { ClientsService } from '../clients/clients.service';
-import { OidcTokenDto } from './dto/oidc-token.dto';
+import { AccessTokenRequestDto } from './dto/access-token-request.dto';
+import { RefreshTokenRequestDto } from './dto/refresh-token-request.dto';
 import { OidcTokenResponseDto } from './dto/oidc-token-response.dto';
 import { Public } from './decorators/public.decorator';
 import { AuthRequest as Request } from './types/request';
 
 /**
- * Keycloak-compatible OAuth2 token endpoint, kept separate from AuthController
+ * Keycloak-compatible OAuth2 token endpoints, kept separate from AuthController
  * so the existing JSON `/auth/:realmName/login` contract is untouched. Wraps
- * the same AuthService.validateUser/login used there — no auth logic is
- * duplicated, only the request/response shape differs (form-encoded OAuth2
- * password grant in, OAuth2 token pair out) so clients built against a real
- * Keycloak token endpoint work here unmodified.
+ * the same AuthService.validateUser/login/refreshTokenByRawToken used there —
+ * no auth logic is duplicated, only the request/response shape differs
+ * (form-encoded OAuth2 body in, OAuth2 token pair out) so clients built
+ * against a real Keycloak token endpoint work here unmodified. Password-grant
+ * and refresh-grant requests are separate routes rather than one endpoint
+ * branching on `grant_type`.
  */
 @ApiTags('oidc')
 @Controller('realms')
@@ -36,41 +32,24 @@ export class OidcTokenController {
   ) {}
 
   @Public()
-  @Post(':realmName/protocol/openid-connect/token')
+  @Post(':realmName/protocol/openid-connect/access-token')
   @ApiOperation({
-    summary: 'Issue a token pair (Keycloak-compatible)',
+    summary: 'Issue a token pair from a username/password (Keycloak-compatible)',
     description:
       "OAuth2 Resource Owner Password Credentials grant. Form-encoded body, matching Keycloak's token endpoint.",
   })
   @ApiParam({ name: 'realmName', example: 'master', description: 'Realm the client/user belong to' })
-  @ApiBody({ type: OidcTokenDto })
+  @ApiBody({ type: AccessTokenRequestDto })
   @ApiResponse({ status: 200, description: 'Token issued.', type: OidcTokenResponseDto })
-  @ApiResponse({ status: 400, description: 'Unsupported grant_type, or client not allowed to use it.' })
   @ApiResponse({ status: 401, description: 'Invalid client credentials or invalid user credentials.' })
   @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
-  async token(
+  async accessToken(
     @Param('realmName') realmName: string,
-    @Body() dto: OidcTokenDto,
+    @Body() dto: AccessTokenRequestDto,
     @Req() req: Request,
   ) {
-    
-    const realmId = await this.clientsService.resolveRealmId(realmName);
-    const client = await this.clientsService.findByClientId(realmId, dto.client_id);
+    await this.validateClient(realmName, dto.client_id, dto.client_secret);
 
-    if (!client.isActive) {
-      throw new UnauthorizedException('invalid_client');
-    }
-    // Confidential clients must present their secret; public clients have none to check.
-    if (!client.publicClient && client.clientSecret !== dto.client_secret) {
-      throw new UnauthorizedException('invalid_client');
-    }
-    // const allowedGrantTypes = (client.grantTypes || '')
-    //   .split(',')
-    //   .map((grantType) => grantType.trim());
-    // if (!allowedGrantTypes.includes(dto.grant_type)) {
-    //   throw new BadRequestException('unauthorized_client');
-    // }
-    
     const user = await this.authService.validateUser(dto.username, dto.password, realmName);
     const result = await this.authService.login(
       user.id,
@@ -78,6 +57,51 @@ export class OidcTokenController {
       user,
     );
 
+    return this.toTokenResponse(result);
+  }
+
+  @Public()
+  @Post(':realmName/protocol/openid-connect/refresh-token')
+  @ApiOperation({
+    summary: 'Issue a token pair from a refresh token (Keycloak-compatible)',
+    description:
+      "OAuth2 refresh_token grant. Form-encoded body, matching Keycloak's token endpoint.",
+  })
+  @ApiParam({ name: 'realmName', example: 'master', description: 'Realm the client/user belong to' })
+  @ApiBody({ type: RefreshTokenRequestDto })
+  @ApiResponse({ status: 200, description: 'Token issued.', type: OidcTokenResponseDto })
+  @ApiResponse({ status: 401, description: 'Invalid client credentials or invalid/expired refresh token.' })
+  @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
+  async refreshToken(
+    @Param('realmName') realmName: string,
+    @Body() dto: RefreshTokenRequestDto,
+  ) {
+    await this.validateClient(realmName, dto.client_id, dto.client_secret);
+
+    const result = await this.authService.refreshTokenByRawToken(dto.refresh_token);
+
+    return this.toTokenResponse(result);
+  }
+
+  private async validateClient(
+    realmName: string,
+    clientId: string,
+    clientSecret?: string,
+  ): Promise<Client> {
+    const realmId = await this.clientsService.resolveRealmId(realmName);
+    const client = await this.clientsService.findByClientId(realmId, clientId);
+
+    if (!client.isActive) {
+      throw new UnauthorizedException('invalid_client');
+    }
+    // Confidential clients must present their secret; public clients have none to check.
+    if (!client.publicClient && client.clientSecret !== clientSecret) {
+      throw new UnauthorizedException('invalid_client');
+    }
+    return client;
+  }
+
+  private toTokenResponse(result: { token: string; refreshToken: string }) {
     const accessExpiresIn = this.configService.get<string>('JWT_EXPIRE_IN', '1d');
     const refreshExpiresIn = this.configService.get<string>('REFRESH_JWT_EXPIRE_IN', '');
 
