@@ -123,6 +123,25 @@ export class UsersController {
     return plainToInstance(UserResponseDto, user, { excludeExtraneousValues: true });
   }
 
+  // The auth guard (JwtRs256Guard/JwtStrategy) already resolves req.user via
+  // AuthService.validateUserRole for every authenticated request, so this is
+  // a free read of already-computed data — no extra DB query here. Consumed
+  // by pawn-backend's GET /auth/permissions, which forwards the caller's own
+  // access token to this endpoint.
+  @Get('me/permissions')
+  @ApiOperation({
+    summary: "Get the current user's roles and permissions",
+    description:
+      "Returns the flattened permission names and role names already resolved onto the request by the auth guard.",
+  })
+  @ApiResponse({ status: 200, description: "The authenticated user's roles and permissions." })
+  findMyPermissions(@Req() req: AuthRequest) {
+    return {
+      roles: (req.user.roles ?? []).map((role) => role.name),
+      permissions: req.user.permissions ?? [],
+    };
+  }
+
   @Patch('me')
   @ApiOperation({
     summary: "Update the current user's own profile",
