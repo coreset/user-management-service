@@ -35,7 +35,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
   /** Encode realmName into the OAuth state so it survives the Google redirect. */
   authenticate(req: Request, options?: any) {
     const realmName = (req.query?.realmName as string) ?? '';
-    const state = Buffer.from(JSON.stringify({ realmName })).toString('base64url');
+    const state = Buffer.from(JSON.stringify({ realmName })).toString(
+      'base64url',
+    );
     super.authenticate(req, { ...options, state });
   }
 
@@ -52,7 +54,8 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     let realmName = '';
     try {
       const raw = (req.query?.state as string) ?? '';
-      realmName = JSON.parse(Buffer.from(raw, 'base64url').toString()).realmName ?? '';
+      realmName =
+        JSON.parse(Buffer.from(raw, 'base64url').toString()).realmName ?? '';
     } catch {
       // state missing or malformed — realmName stays empty; service will reject
     }

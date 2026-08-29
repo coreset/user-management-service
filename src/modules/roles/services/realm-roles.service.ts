@@ -1,4 +1,11 @@
-import { BadRequestException, ConflictException, ForbiddenException, Injectable, InternalServerErrorException, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ConflictException,
+  ForbiddenException,
+  Injectable,
+  InternalServerErrorException,
+  NotFoundException,
+} from '@nestjs/common';
 import { CreateRealmRoleDto } from '../dto/create-realm-role.dto';
 import { UpdateRealmRoleDto } from '../dto/update-realm-role.dto';
 import { InjectRepository } from '@nestjs/typeorm';
@@ -56,18 +63,29 @@ export class RealmRolesService {
 
       if (existing) {
         if (existing.deletedAt) {
-          this.logger.warn(`Restoring soft-deleted role: ${createRoleDto.name}`, RealmRolesService.name);
+          this.logger.warn(
+            `Restoring soft-deleted role: ${createRoleDto.name}`,
+            RealmRolesService.name,
+          );
           // Restore the soft-deleted record
           await this.RoleRepo.restore(existing.id);
 
           // Optionally update other fields
           const updated = this.RoleRepo.merge(existing, createRoleDto);
           const restoredRole = await this.RoleRepo.save(updated);
-          this.logger.log(`Role restored successfully: ${restoredRole.id}`, RealmRolesService.name);
+          this.logger.log(
+            `Role restored successfully: ${restoredRole.id}`,
+            RealmRolesService.name,
+          );
           return restoredRole;
         } else {
-          this.logger.warn(`Attempt to create duplicate role: ${createRoleDto.name}`, RealmRolesService.name);
-          throw new ConflictException(`Role with this name ${createRoleDto.name} already exists`);
+          this.logger.warn(
+            `Attempt to create duplicate role: ${createRoleDto.name}`,
+            RealmRolesService.name,
+          );
+          throw new ConflictException(
+            `Role with this name ${createRoleDto.name} already exists`,
+          );
         }
       }
 
@@ -77,15 +95,23 @@ export class RealmRolesService {
         realm: { id: realmId } as Realm,
       });
       const savedRole = await this.RoleRepo.save(newRole);
-      this.logger.log(`Role saved successfully: ${savedRole.id}`, RealmRolesService.name);
+      this.logger.log(
+        `Role saved successfully: ${savedRole.id}`,
+        RealmRolesService.name,
+      );
       return savedRole;
     } catch (error) {
       // You can add custom error handling here
-      this.logger.error(`Failed to create role: ${error.message}`, RealmRolesService.name);
+      this.logger.error(
+        `Failed to create role: ${error.message}`,
+        RealmRolesService.name,
+      );
       if (error instanceof ConflictException) {
         throw error;
       }
-      throw new InternalServerErrorException('Something went wrong while creating the Role');
+      throw new InternalServerErrorException(
+        'Something went wrong while creating the Role',
+      );
     }
   }
 
@@ -164,7 +190,10 @@ export class RealmRolesService {
   }
 
   /** Lists the realm roles currently assigned to a given user, within this realm. */
-  async findRolesForUser(realmId: string, userId: string): Promise<RealmRole[]> {
+  async findRolesForUser(
+    realmId: string,
+    userId: string,
+  ): Promise<RealmRole[]> {
     const user = await this.usersService.findOne(userId);
     if (!user) {
       throw new NotFoundException(`User with id ${userId} not found`);
@@ -200,23 +229,26 @@ export class RealmRolesService {
     }
 
     if (role.name === FixedUserRole.SUPER_ADMIN) {
-      this.logger.warn(
-        `Super Admin cannot delete`,
-        RealmRolesService.name,
-      );
+      this.logger.warn(`Super Admin cannot delete`, RealmRolesService.name);
       throw new ForbiddenException(`Super Admin cannot delete`);
     }
 
     if (role.deletedAt) {
-      this.logger.warn(`Role with id ${id} is already deleted`, RealmRolesService.name);
+      this.logger.warn(
+        `Role with id ${id} is already deleted`,
+        RealmRolesService.name,
+      );
       throw new ConflictException(`Role with id ${id} is already deleted`);
     }
 
     /* why need to check 'deletedAt' before 'restore' function
      * TypeORM's softDelete and restore do not check the current status
-    * */
+     * */
     await this.RoleRepo.softDelete(id);
-    this.logger.warn(`Role with id ${id} successfully deleted`, RealmRolesService.name);
+    this.logger.warn(
+      `Role with id ${id} successfully deleted`,
+      RealmRolesService.name,
+    );
   }
 
   //async restore(id: number): Promise<void> {
@@ -239,20 +271,26 @@ export class RealmRolesService {
     }
 
     if (!role.deletedAt) {
-      this.logger.warn(`Role with id ${id} is not deleted`, RealmRolesService.name);
+      this.logger.warn(
+        `Role with id ${id} is not deleted`,
+        RealmRolesService.name,
+      );
       throw new ConflictException(`Role with id ${id} is not deleted`);
     }
 
     /* why need to check 'deletedAt' before 'restore' function
      * TypeORM's softDelete and restore do not check the current status
-    * */
+     * */
     await this.RoleRepo.restore(id);
-    this.logger.log(`Role with id ${id} successfully restored`, RealmRolesService.name);
+    this.logger.log(
+      `Role with id ${id} successfully restored`,
+      RealmRolesService.name,
+    );
   }
 
   findByIdList(idList: string[]): Promise<any> {
     return this.RoleRepo.find({
-      where: {id : In(idList)}
+      where: { id: In(idList) },
     });
   }
 
@@ -278,7 +316,10 @@ export class RealmRolesService {
       throw new ForbiddenException(`Super Admin role cannot assign`);
     }
 
-    const usersToAdd: User[] = await this.usersService.findByIdList(userIdList, role.realm.id);
+    const usersToAdd: User[] = await this.usersService.findByIdList(
+      userIdList,
+      role.realm.id,
+    );
 
     const foundIds: string[] = usersToAdd.map((u) => u.id);
     const missingIds = userIdList.filter((id) => !foundIds.includes(id));
@@ -303,7 +344,11 @@ export class RealmRolesService {
     const newAssignments: UserRealmRole[] = usersToAdd
       .filter((user) => !alreadyAssigned.has(user.id))
       .map((user) =>
-        this.UserRealmRoleRepo.create({ user, realm: role.realm, realmRole: role }),
+        this.UserRealmRoleRepo.create({
+          user,
+          realm: role.realm,
+          realmRole: role,
+        }),
       );
     await this.UserRealmRoleRepo.save(newAssignments);
 
@@ -343,10 +388,11 @@ export class RealmRolesService {
 
     // Restricted to the role's realm: permissions from another realm won't be
     // found and are reported as missing below (prevents cross-realm attach).
-    const permissionsToAdd: Permission[] = await this.permissionService.findByIdList(
-      role.realm.id,
-      permissionIdList,
-    );
+    const permissionsToAdd: Permission[] =
+      await this.permissionService.findByIdList(
+        role.realm.id,
+        permissionIdList,
+      );
 
     const foundIds: string[] = permissionsToAdd.map((u) => u.id);
     const missingIds = permissionIdList.filter((id) => !foundIds.includes(id));
@@ -396,7 +442,8 @@ export class RealmRolesService {
       throw new ForbiddenException(`Super Admin role cannot unassign`);
     }
 
-    const usersToRemove: User[] = await this.usersService.findByIdList(userIdList);
+    const usersToRemove: User[] =
+      await this.usersService.findByIdList(userIdList);
 
     const foundIds: string[] = usersToRemove.map((u) => u.id);
     const missingIds = userIdList.filter((id) => !foundIds.includes(id));
@@ -429,7 +476,10 @@ export class RealmRolesService {
     };
   }
 
-  async unassignPermissionsFromRole(roleId: string, permissionIdList: string[]) {
+  async unassignPermissionsFromRole(
+    roleId: string,
+    permissionIdList: string[],
+  ) {
     const role: RealmRole = (await this.RoleRepo.findOne({
       where: { id: roleId },
       relations: ['permissions', 'realm'],
@@ -448,13 +498,16 @@ export class RealmRolesService {
         `Super Admin role permissions cannot change`,
         RealmRolesService.name,
       );
-      throw new ForbiddenException(`Super Admin role permissions cannot change`);
+      throw new ForbiddenException(
+        `Super Admin role permissions cannot change`,
+      );
     }
 
-    const permissionsToRemove: Permission[] = await this.permissionService.findByIdList(
-      role.realm.id,
-      permissionIdList,
-    );
+    const permissionsToRemove: Permission[] =
+      await this.permissionService.findByIdList(
+        role.realm.id,
+        permissionIdList,
+      );
 
     const foundIds: string[] = permissionsToRemove.map((u) => u.id);
     const missingIds = permissionIdList.filter((id) => !foundIds.includes(id));
@@ -470,7 +523,9 @@ export class RealmRolesService {
     }
 
     // Filter out permissions to be removed
-    role.permissions = role.permissions.filter((permission) => !foundIds.includes(permission.id));
+    role.permissions = role.permissions.filter(
+      (permission) => !foundIds.includes(permission.id),
+    );
 
     await this.RoleRepo.save(role);
 

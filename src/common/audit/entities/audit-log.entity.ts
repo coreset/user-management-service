@@ -66,7 +66,12 @@ export class AuditLog {
   @Column({ name: 'actor_id', type: 'varchar', length: 100, nullable: true })
   actorId?: string | null;
 
-  @Column({ name: 'actor_username', type: 'varchar', length: 150, nullable: true })
+  @Column({
+    name: 'actor_username',
+    type: 'varchar',
+    length: 150,
+    nullable: true,
+  })
   actorUsername?: string | null;
 
   // hash chain: row_hash = sha256(prev_hash + canonical(payload))

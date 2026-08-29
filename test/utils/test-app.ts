@@ -57,7 +57,9 @@ export async function seedDatabase(dataSource: DataSource): Promise<void> {
  * and API-created users start unverified, so tests flip this directly rather
  * than driving the whole email-verification flow (out of scope for authz tests).
  */
-export async function verifyAllUsersEmail(dataSource: DataSource): Promise<void> {
+export async function verifyAllUsersEmail(
+  dataSource: DataSource,
+): Promise<void> {
   await dataSource.query('UPDATE users SET is_email_verified = true');
 }
 

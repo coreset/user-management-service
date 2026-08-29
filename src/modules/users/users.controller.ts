@@ -21,7 +21,14 @@ import { UserQueryDto } from './dto/user-query.dto';
 import { SearchUserDto } from './dto/search-role.dto';
 import { Permissions } from '../permission/decorators/permissions.decorator';
 import { PermissionKey } from '../permission/constants/permission-key.enum';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { AuthRequest } from '../auth/types/request';
 import { plainToInstance } from 'class-transformer';
 
@@ -61,21 +68,55 @@ export class UsersController {
     @Body() createUserDto: CreateUserDto,
   ) {
     const result = await this.usersService.create(createUserDto, realmName);
-    return plainToInstance(UserResponseDto, result, { excludeExtraneousValues: true });
+    return plainToInstance(UserResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.USERS_READ])
   @Get()
   @ApiOperation({
     summary: 'List users',
-    description: 'Lists every non-deleted user, optionally filtered by realm (paginated).',
+    description:
+      'Lists every non-deleted user, optionally filtered by realm (paginated).',
   })
-  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
-  @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page (max 100)' })
-  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
-  @ApiQuery({ name: 'realmId', required: false, example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479', description: 'Filter by realm ID' })
-  @ApiQuery({ name: 'realmName', required: false, example: 'master', description: 'Filter by realm name (alternative to realmId)' })
-  @ApiQuery({ name: 'search', required: false, example: 'john', description: 'Search by username, email, first name, or last name' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    example: 1,
+    description: 'Page number (1-indexed)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    example: 10,
+    description: 'Items per page (max 100)',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    enum: ['asc', 'desc', 'ASC', 'DESC'],
+    example: 'DESC',
+    description: 'Sort direction',
+  })
+  @ApiQuery({
+    name: 'realmId',
+    required: false,
+    example: 'f47ac10b-58cc-4372-a567-0e02b2c3d479',
+    description: 'Filter by realm ID',
+  })
+  @ApiQuery({
+    name: 'realmName',
+    required: false,
+    example: 'master',
+    description: 'Filter by realm name (alternative to realmId)',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    example: 'john',
+    description: 'Search by username, email, first name, or last name',
+  })
   @ApiResponse({ status: 200, description: 'Paginated list of users.' })
   async findAll(@Query() queryDto: UserQueryDto) {
     const result = await this.usersService.findAllPaginated(
@@ -98,29 +139,58 @@ export class UsersController {
   @Get('search')
   @ApiOperation({
     summary: 'Search users by first name (Deprecated)',
-    description: 'Searches users by first name; paginates only when both page and limit are supplied. DEPRECATED: Use GET /users?search=... instead.',
+    description:
+      'Searches users by first name; paginates only when both page and limit are supplied. DEPRECATED: Use GET /users?search=... instead.',
     deprecated: true,
   })
-  @ApiQuery({ name: 'name', required: true, example: 'firstname', description: 'First name to search for' })
-  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
-  @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Page size' })
-  @ApiResponse({ status: 200, description: 'Matching users (paginated if page/limit given).' })
-  @ApiResponse({ status: 400, description: 'Missing search parameters (name given without both page and limit, or neither).' })
+  @ApiQuery({
+    name: 'name',
+    required: true,
+    example: 'firstname',
+    description: 'First name to search for',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    example: 1,
+    description: 'Page number (1-indexed)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    example: 10,
+    description: 'Page size',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Matching users (paginated if page/limit given).',
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Missing search parameters (name given without both page and limit, or neither).',
+  })
   search(@Query() query: SearchUserDto) {
     const { name, page, limit } = query;
     return this.usersService.searchAllPaginated(name, page, limit);
-
   }
 
   @Get('me')
   @ApiOperation({
     summary: 'Get the current authenticated user',
-    description: "Returns the authenticated user's own profile, resolved from the access token.",
+    description:
+      "Returns the authenticated user's own profile, resolved from the access token.",
   })
-  @ApiResponse({ status: 200, description: "The authenticated user's profile.", type: UserResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: "The authenticated user's profile.",
+    type: UserResponseDto,
+  })
   async findMe(@Req() req: AuthRequest) {
     const user = await this.usersService.findOne(req.user.id);
-    return plainToInstance(UserResponseDto, user, { excludeExtraneousValues: true });
+    return plainToInstance(UserResponseDto, user, {
+      excludeExtraneousValues: true,
+    });
   }
 
   // The auth guard (JwtRs256Guard/JwtStrategy) already resolves req.user via
@@ -132,9 +202,12 @@ export class UsersController {
   @ApiOperation({
     summary: "Get the current user's roles and permissions",
     description:
-      "Returns the flattened permission names and role names already resolved onto the request by the auth guard.",
+      'Returns the flattened permission names and role names already resolved onto the request by the auth guard.',
   })
-  @ApiResponse({ status: 200, description: "The authenticated user's roles and permissions." })
+  @ApiResponse({
+    status: 200,
+    description: "The authenticated user's roles and permissions.",
+  })
   findMyPermissions(@Req() req: AuthRequest) {
     return {
       roles: (req.user.roles ?? []).map((role) => role.name),
@@ -145,12 +218,19 @@ export class UsersController {
   @Patch('me')
   @ApiOperation({
     summary: "Update the current user's own profile",
-    description: 'Self-service profile edit — only name/avatar, no username, email, password, or status change.',
+    description:
+      'Self-service profile edit — only name/avatar, no username, email, password, or status change.',
   })
-  @ApiResponse({ status: 200, description: 'Profile updated.', type: UserResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'Profile updated.',
+    type: UserResponseDto,
+  })
   async updateMe(@Req() req: AuthRequest, @Body() dto: UpdateMyProfileDto) {
     const user = await this.usersService.updateOwnProfile(req.user.id, dto);
-    return plainToInstance(UserResponseDto, user, { excludeExtraneousValues: true });
+    return plainToInstance(UserResponseDto, user, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.USERS_READ])
@@ -160,17 +240,23 @@ export class UsersController {
     description: "Fetches a user's profile by UUID.",
   })
   @ApiParam(ID_PARAM)
-  @ApiResponse({ status: 200, description: 'The requested user, or null if no user has this id.', type: UserResponseDto })
+  @ApiResponse({
+    status: 200,
+    description: 'The requested user, or null if no user has this id.',
+    type: UserResponseDto,
+  })
   async findOne(@Param('id', ParseUUIDPipe) id: string) {
     const user = await this.usersService.findOne(id);
-    return plainToInstance(UserResponseDto, user, { excludeExtraneousValues: true });
+    return plainToInstance(UserResponseDto, user, {
+      excludeExtraneousValues: true,
+    });
   }
 
   @Permissions([PermissionKey.USERS_UPDATE])
   @Put(':id')
   @ApiOperation({
     summary: 'Replace a user',
-    description: 'Replaces the given user\'s fields with the supplied values.',
+    description: "Replaces the given user's fields with the supplied values.",
   })
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'User updated.' })

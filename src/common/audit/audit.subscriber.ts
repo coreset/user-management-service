@@ -32,11 +32,23 @@ export class AuditSubscriber implements EntitySubscriberInterface {
   }
 
   afterInsert(event: InsertEvent<unknown>): Promise<void> {
-    return this.record(event.manager, event.metadata, 'INSERT', undefined, event.entity);
+    return this.record(
+      event.manager,
+      event.metadata,
+      'INSERT',
+      undefined,
+      event.entity,
+    );
   }
 
   afterUpdate(event: UpdateEvent<unknown>): Promise<void> {
-    return this.record(event.manager, event.metadata, 'UPDATE', event.databaseEntity, event.entity);
+    return this.record(
+      event.manager,
+      event.metadata,
+      'UPDATE',
+      event.databaseEntity,
+      event.entity,
+    );
   }
 
   afterRemove(event: RemoveEvent<unknown>): Promise<void> {

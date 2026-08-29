@@ -11,14 +11,49 @@ import {
 
 const MASTER = process.env.MASTER_REALM_NAME || 'master';
 const PAWN = 'pawn';
-const USER_A = { username: 'userA', password: 'Passw0rd123', email: 'userA@example.com', firstName: 'User', lastName: 'Alpha' };
-const USER_B = { username: 'userB', password: 'Passw0rd456', email: 'userB@example.com', firstName: 'User', lastName: 'Beta' };
-const USER_X = { username: 'userX', password: 'Passw0rdX99', email: 'userX@example.com', firstName: 'User', lastName: 'Xray' };
-const USER_Y = { username: 'userY', password: 'Passw0rdY99', email: 'userY@example.com', firstName: 'User', lastName: 'Yankee' };
-const USER_Z = { username: 'userZ', password: 'Passw0rdZ99', email: 'userZ@example.com', firstName: 'User', lastName: 'Zulu' };
+const USER_A = {
+  username: 'userA',
+  password: 'Passw0rd123',
+  email: 'userA@example.com',
+  firstName: 'User',
+  lastName: 'Alpha',
+};
+const USER_B = {
+  username: 'userB',
+  password: 'Passw0rd456',
+  email: 'userB@example.com',
+  firstName: 'User',
+  lastName: 'Beta',
+};
+const USER_X = {
+  username: 'userX',
+  password: 'Passw0rdX99',
+  email: 'userX@example.com',
+  firstName: 'User',
+  lastName: 'Xray',
+};
+const USER_Y = {
+  username: 'userY',
+  password: 'Passw0rdY99',
+  email: 'userY@example.com',
+  firstName: 'User',
+  lastName: 'Yankee',
+};
+const USER_Z = {
+  username: 'userZ',
+  password: 'Passw0rdZ99',
+  email: 'userZ@example.com',
+  firstName: 'User',
+  lastName: 'Zulu',
+};
 const MANAGER_A_ROLE = { name: 'ManagerA', displayName: 'Manager A Role' };
 const MANAGER_B_ROLE = { name: 'ManagerB', displayName: 'Manager B Role' };
-const ROLE_PERMISSION_NAMES = ['roles:read', 'roles:create', 'roles:delete', 'roles:update'];
+const ROLE_PERMISSION_NAMES = [
+  'roles:read',
+  'roles:create',
+  'roles:delete',
+  'roles:update',
+];
 
 /** Fetches a realm's permission catalog and resolves the ids for the given names. */
 async function fetchPermissionIds(
@@ -54,7 +89,11 @@ async function bootstrapPermissions(
   }
 }
 
-async function getUserId(app: INestApplication, token: string, username: string): Promise<string> {
+async function getUserId(
+  app: INestApplication,
+  token: string,
+  username: string,
+): Promise<string> {
   const res = await request(app.getHttpServer())
     .get(`/users`)
     .set('Authorization', `Bearer ${token}`)
@@ -153,14 +192,24 @@ describe('Multi-realm role/user creation and assignment chain (e2e)', () => {
       'roles:assign-users',
     ]);
 
-    const masterRolePermIds = await fetchPermissionIds(app, superAdminToken, MASTER, ROLE_PERMISSION_NAMES);
+    const masterRolePermIds = await fetchPermissionIds(
+      app,
+      superAdminToken,
+      MASTER,
+      ROLE_PERMISSION_NAMES,
+    );
     await request(app.getHttpServer())
       .post(`/realms/${MASTER}/roles/${managerARoleId}/permissions`)
       .set('Authorization', `Bearer ${superAdminToken}`)
       .send({ permissionIds: masterRolePermIds })
       .expect(201);
 
-    const pawnRolePermIds = await fetchPermissionIds(app, superAdminToken, PAWN, ROLE_PERMISSION_NAMES);
+    const pawnRolePermIds = await fetchPermissionIds(
+      app,
+      superAdminToken,
+      PAWN,
+      ROLE_PERMISSION_NAMES,
+    );
     await request(app.getHttpServer())
       .post(`/realms/${PAWN}/roles/${managerBRoleId}/permissions`)
       .set('Authorization', `Bearer ${superAdminToken}`)
@@ -182,8 +231,16 @@ describe('Multi-realm role/user creation and assignment chain (e2e)', () => {
       .send({ userIdList: [userBId] })
       .expect(201);
 
-    userAToken = await login(app, { realmName: MASTER, username: USER_A.username, password: USER_A.password });
-    userBToken = await login(app, { realmName: PAWN, username: USER_B.username, password: USER_B.password });
+    userAToken = await login(app, {
+      realmName: MASTER,
+      username: USER_A.username,
+      password: USER_A.password,
+    });
+    userBToken = await login(app, {
+      realmName: PAWN,
+      username: USER_B.username,
+      password: USER_B.password,
+    });
   });
 
   afterAll(async () => {
@@ -267,7 +324,12 @@ describe('Multi-realm role/user creation and assignment chain (e2e)', () => {
   // ========== Requirements 30-32: Grant users:create (+ roles:assign-users) ==========
 
   it('30: super admin assigns master users:create to ManagerA — success', async () => {
-    const [usersCreateId] = await fetchPermissionIds(app, superAdminToken, MASTER, ['users:create']);
+    const [usersCreateId] = await fetchPermissionIds(
+      app,
+      superAdminToken,
+      MASTER,
+      ['users:create'],
+    );
     await request(app.getHttpServer())
       .post(`/realms/${MASTER}/roles/${managerARoleId}/permissions`)
       .set('Authorization', `Bearer ${superAdminToken}`)
@@ -276,7 +338,12 @@ describe('Multi-realm role/user creation and assignment chain (e2e)', () => {
   });
 
   it('31: super admin assigns master users:create + roles:assign-users to ManagerB — error (cross-realm)', async () => {
-    const permissionIds = await fetchPermissionIds(app, superAdminToken, MASTER, ['users:create', 'roles:assign-users']);
+    const permissionIds = await fetchPermissionIds(
+      app,
+      superAdminToken,
+      MASTER,
+      ['users:create', 'roles:assign-users'],
+    );
 
     // ManagerB is a PAWN-realm role; master permission ids don't resolve against
     // role.realm.id ('pawn') -> BadRequestException("Permissions not found...").
@@ -289,7 +356,12 @@ describe('Multi-realm role/user creation and assignment chain (e2e)', () => {
   });
 
   it('32: super admin assigns pawn users:create to ManagerB — success', async () => {
-    const [usersCreateId] = await fetchPermissionIds(app, superAdminToken, PAWN, ['users:create']);
+    const [usersCreateId] = await fetchPermissionIds(
+      app,
+      superAdminToken,
+      PAWN,
+      ['users:create'],
+    );
     await request(app.getHttpServer())
       .post(`/realms/${PAWN}/roles/${managerBRoleId}/permissions`)
       .set('Authorization', `Bearer ${superAdminToken}`)
@@ -300,7 +372,11 @@ describe('Multi-realm role/user creation and assignment chain (e2e)', () => {
   // ========== Requirements 33-35: User creation AFTER users:create granted ==========
 
   it('33: userA creates userX under master realm — success', async () => {
-    userAToken = await login(app, { realmName: MASTER, username: USER_A.username, password: USER_A.password });
+    userAToken = await login(app, {
+      realmName: MASTER,
+      username: USER_A.username,
+      password: USER_A.password,
+    });
 
     const res = await request(app.getHttpServer())
       .post(`/users/${MASTER}`)
@@ -322,7 +398,11 @@ describe('Multi-realm role/user creation and assignment chain (e2e)', () => {
     // userB holds users:create in PAWN (granted at step 32), but that permission
     // doesn't travel across realms: master is a different realm from userB's own,
     // so tenant isolation blocks this regardless of what userB can do in pawn.
-    userBToken = await login(app, { realmName: PAWN, username: USER_B.username, password: USER_B.password });
+    userBToken = await login(app, {
+      realmName: PAWN,
+      username: USER_B.username,
+      password: USER_B.password,
+    });
 
     const res = await request(app.getHttpServer())
       .post(`/users/${MASTER}`)
@@ -339,7 +419,11 @@ describe('Multi-realm role/user creation and assignment chain (e2e)', () => {
   });
 
   it('35: userB creates userY under pawn realm — success', async () => {
-    userBToken = await login(app, { realmName: PAWN, username: USER_B.username, password: USER_B.password });
+    userBToken = await login(app, {
+      realmName: PAWN,
+      username: USER_B.username,
+      password: USER_B.password,
+    });
 
     await request(app.getHttpServer())
       .post(`/users/${PAWN}`)
@@ -362,14 +446,23 @@ describe('Multi-realm role/user creation and assignment chain (e2e)', () => {
     // Needed for requirement 36 (userB assigns ManagerB to userY): userB only
     // holds roles:read/create/delete/update + users:create so far, never
     // roles:assign-users, so the assignment below would 403 without this grant.
-    const [assignUsersId] = await fetchPermissionIds(app, superAdminToken, PAWN, ['roles:assign-users']);
+    const [assignUsersId] = await fetchPermissionIds(
+      app,
+      superAdminToken,
+      PAWN,
+      ['roles:assign-users'],
+    );
     await request(app.getHttpServer())
       .post(`/realms/${PAWN}/roles/${managerBRoleId}/permissions`)
       .set('Authorization', `Bearer ${superAdminToken}`)
       .send({ permissionIds: [assignUsersId] })
       .expect(201);
 
-    userBToken = await login(app, { realmName: PAWN, username: USER_B.username, password: USER_B.password });
+    userBToken = await login(app, {
+      realmName: PAWN,
+      username: USER_B.username,
+      password: USER_B.password,
+    });
   });
 
   it('36: userB assigns ManagerB role to userY — success', async () => {
@@ -406,7 +499,11 @@ describe('Multi-realm role/user creation and assignment chain (e2e)', () => {
   // ========== Requirements 39-42: userX/userY login and read-roles chain ==========
 
   it('39: userX logs in and reads roles under master realm — access denied (no permissions)', async () => {
-    const userXToken = await login(app, { realmName: MASTER, username: USER_X.username, password: USER_X.password });
+    const userXToken = await login(app, {
+      realmName: MASTER,
+      username: USER_X.username,
+      password: USER_X.password,
+    });
 
     const res = await request(app.getHttpServer())
       .get(`/realms/${MASTER}/roles`)
@@ -425,7 +522,11 @@ describe('Multi-realm role/user creation and assignment chain (e2e)', () => {
   });
 
   it('41: userY logs in and reads roles under pawn realm — success (inherited via ManagerB)', async () => {
-    const userYToken = await login(app, { realmName: PAWN, username: USER_Y.username, password: USER_Y.password });
+    const userYToken = await login(app, {
+      realmName: PAWN,
+      username: USER_Y.username,
+      password: USER_Y.password,
+    });
 
     await request(app.getHttpServer())
       .get(`/realms/${PAWN}/roles`)

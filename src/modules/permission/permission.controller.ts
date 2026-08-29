@@ -8,7 +8,14 @@ import {
   Delete,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { PermissionService } from './permission.service';
 import { CreatePermissionDto } from './dto/create-permission.dto';
@@ -41,16 +48,23 @@ export class PermissionController {
   @Post()
   @ApiOperation({
     summary: 'Create a permission',
-    description: 'Adds a new permission key to the realm\'s permission catalog (realm-scoped; UNIQUE(realm_id, name)).',
+    description:
+      "Adds a new permission key to the realm's permission catalog (realm-scoped; UNIQUE(realm_id, name)).",
   })
   @ApiResponse({ status: 201, description: 'Permission created.' })
   @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
-  @ApiResponse({ status: 409, description: 'A permission with this name already exists in this realm.' })
+  @ApiResponse({
+    status: 409,
+    description: 'A permission with this name already exists in this realm.',
+  })
   async create(
     @Param('realmName') realmName: string,
     @Body() createPermissionDto: CreatePermissionDto,
   ) {
-    const result = await this.permissionService.create(realmName, createPermissionDto);
+    const result = await this.permissionService.create(
+      realmName,
+      createPermissionDto,
+    );
     return plainToInstance(PermissionResponseDto, result, {
       excludeExtraneousValues: true,
     });
@@ -62,11 +76,35 @@ export class PermissionController {
     summary: 'List permissions',
     description: "Lists every permission in the realm's catalog (paginated).",
   })
-  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
-  @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page (max 100)' })
-  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
-  @ApiQuery({ name: 'search', required: false, example: 'invoice', description: 'Search by permission name' })
-  @ApiResponse({ status: 200, description: 'Paginated list of permissions in the realm.' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    example: 1,
+    description: 'Page number (1-indexed)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    example: 10,
+    description: 'Items per page (max 100)',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    enum: ['asc', 'desc', 'ASC', 'DESC'],
+    example: 'DESC',
+    description: 'Sort direction',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    example: 'invoice',
+    description: 'Search by permission name',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated list of permissions in the realm.',
+  })
   @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
   async findAll(
     @Param('realmName') realmName: string,
@@ -89,8 +127,14 @@ export class PermissionController {
   @ApiOperation({ summary: 'Get a permission by id' })
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'The requested permission.' })
-  @ApiResponse({ status: 404, description: 'Permission not found in this realm.' })
-  async findOne(@Param('realmName') realmName: string, @Param('id') id: string) {
+  @ApiResponse({
+    status: 404,
+    description: 'Permission not found in this realm.',
+  })
+  async findOne(
+    @Param('realmName') realmName: string,
+    @Param('id') id: string,
+  ) {
     const result = await this.permissionService.findOne(realmName, id);
     return plainToInstance(PermissionResponseDto, result, {
       excludeExtraneousValues: true,
@@ -102,14 +146,24 @@ export class PermissionController {
   @ApiOperation({ summary: 'Update a permission' })
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'Permission updated.' })
-  @ApiResponse({ status: 403, description: 'System permissions cannot be renamed.' })
-  @ApiResponse({ status: 404, description: 'Permission not found in this realm.' })
+  @ApiResponse({
+    status: 403,
+    description: 'System permissions cannot be renamed.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Permission not found in this realm.',
+  })
   async update(
     @Param('realmName') realmName: string,
     @Param('id') id: string,
     @Body() updatePermissionDto: UpdatePermissionDto,
   ) {
-    const result = await this.permissionService.update(realmName, id, updatePermissionDto);
+    const result = await this.permissionService.update(
+      realmName,
+      id,
+      updatePermissionDto,
+    );
     return plainToInstance(PermissionResponseDto, result, {
       excludeExtraneousValues: true,
     });
@@ -120,9 +174,18 @@ export class PermissionController {
   @ApiOperation({ summary: 'Delete a permission' })
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'Permission deleted.' })
-  @ApiResponse({ status: 403, description: 'System permissions cannot be deleted.' })
-  @ApiResponse({ status: 404, description: 'Permission not found in this realm.' })
-  @ApiResponse({ status: 409, description: 'Permission is still assigned to one or more roles.' })
+  @ApiResponse({
+    status: 403,
+    description: 'System permissions cannot be deleted.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Permission not found in this realm.',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'Permission is still assigned to one or more roles.',
+  })
   remove(@Param('realmName') realmName: string, @Param('id') id: string) {
     return this.permissionService.remove(realmName, id);
   }

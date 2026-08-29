@@ -37,13 +37,18 @@ export class UserAttributesService {
       this.definitionRepo.find(),
       this.attributeRepo.find({ where: { user: { id: userId } } }),
     ]);
-    const valueMap = new Map(values.map((v) => [v.attributeKey, v.attributeValue]));
+    const valueMap = new Map(
+      values.map((v) => [v.attributeKey, v.attributeValue]),
+    );
 
     return definitions.map((def) => {
       const isSet = valueMap.has(def.attributeKey);
       return {
         key: def.attributeKey,
-        value: def.isEncrypted && isSet ? MASKED : valueMap.get(def.attributeKey) ?? null,
+        value:
+          def.isEncrypted && isSet
+            ? MASKED
+            : (valueMap.get(def.attributeKey) ?? null),
         isSet,
         valueType: def.valueType,
         isRequired: def.isRequired,
@@ -54,7 +59,11 @@ export class UserAttributesService {
   }
 
   /** Upsert a user's value for an allowed attribute key. */
-  async set(userId: string, key: string, value: string): Promise<{ message: string }> {
+  async set(
+    userId: string,
+    key: string,
+    value: string,
+  ): Promise<{ message: string }> {
     const def = await this.definitionRepo.findOne({
       where: { attributeKey: key },
     });
@@ -88,7 +97,9 @@ export class UserAttributesService {
       where: { attributeKey: key },
     });
     if (def?.isRequired) {
-      throw new BadRequestException(`Attribute '${key}' is required and cannot be removed`);
+      throw new BadRequestException(
+        `Attribute '${key}' is required and cannot be removed`,
+      );
     }
     const result = await this.attributeRepo.delete({
       user: { id: userId },

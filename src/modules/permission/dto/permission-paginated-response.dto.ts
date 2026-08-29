@@ -4,7 +4,10 @@ import { PaginationMetaDto } from '../../../common/dto/pagination-meta.dto';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class PermissionPaginatedResponseDto {
-  @ApiProperty({ type: [PermissionResponseDto], description: 'Array of permissions' })
+  @ApiProperty({
+    type: [PermissionResponseDto],
+    description: 'Array of permissions',
+  })
   @Expose()
   @Type(() => PermissionResponseDto)
   data: PermissionResponseDto[];

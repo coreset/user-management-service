@@ -8,14 +8,14 @@ if (!fs.existsSync(logDir)) {
   fs.mkdirSync(logDir);
 }
 
-console.log("file location not found ", fs.existsSync(logDir))
+console.log('file location not found ', fs.existsSync(logDir));
 
 // Define log format
 const logFormat = winston.format.combine(
   winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   winston.format.printf(({ timestamp, level, message, context }) => {
     return `${timestamp} [${context || 'Application'}] ${level}: ${message}`;
-  })
+  }),
 );
 
 // Create Winston Logger Configuration
@@ -24,10 +24,7 @@ export const winstonLoggerOptions: winston.LoggerOptions = {
   format: logFormat,
   transports: [
     new winston.transports.Console({
-      format: winston.format.combine(
-        winston.format.colorize(),
-        logFormat
-      ),
+      format: winston.format.combine(winston.format.colorize(), logFormat),
     }),
     new winston.transports.DailyRotateFile({
       dirname: logDir, // Ensure directory is set

@@ -13,8 +13,14 @@ describe('ClientsService', () => {
       providers: [
         ClientsService,
         { provide: getRepositoryToken(Client), useValue: {} },
-        { provide: getRepositoryToken(Realm), useValue: { findOne: jest.fn() } },
-        { provide: AppLoggerService, useValue: { log: jest.fn(), warn: jest.fn(), error: jest.fn() } },
+        {
+          provide: getRepositoryToken(Realm),
+          useValue: { findOne: jest.fn() },
+        },
+        {
+          provide: AppLoggerService,
+          useValue: { log: jest.fn(), warn: jest.fn(), error: jest.fn() },
+        },
       ],
     }).compile();
 

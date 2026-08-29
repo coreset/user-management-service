@@ -1,13 +1,11 @@
+import { Controller, Get, Put, Delete, Param, Body, Req } from '@nestjs/common';
 import {
-  Controller,
-  Get,
-  Put,
-  Delete,
-  Param,
-  Body,
-  Req,
-} from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { SettingsService } from './settings.service';
 import { SetSettingDto } from './dto/set-setting.dto';
@@ -33,9 +31,13 @@ export class SettingsController {
   @Get()
   @ApiOperation({
     summary: "List the caller's realm settings",
-    description: 'Every known setting definition, overlaid with this realm\'s overrides (defaults where not overridden).',
+    description:
+      "Every known setting definition, overlaid with this realm's overrides (defaults where not overridden).",
   })
-  @ApiResponse({ status: 200, description: 'List of effective settings for the realm.' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of effective settings for the realm.',
+  })
   async list(@Req() req: AuthRequest) {
     const result = await this.settingsService.list(req.user.realmId!);
     return plainToInstance(SettingResponseDto, result, {
@@ -46,7 +48,10 @@ export class SettingsController {
   @Get(':key')
   @ApiOperation({ summary: 'Get a single effective setting by key' })
   @ApiParam(KEY_PARAM)
-  @ApiResponse({ status: 200, description: 'The effective setting (default or realm override).' })
+  @ApiResponse({
+    status: 200,
+    description: 'The effective setting (default or realm override).',
+  })
   @ApiResponse({ status: 404, description: 'Unknown setting key.' })
   async get(@Req() req: AuthRequest, @Param('key') key: string) {
     const result = await this.settingsService.get(req.user.realmId!, key);
@@ -58,17 +63,26 @@ export class SettingsController {
   @Put(':key')
   @ApiOperation({
     summary: 'Set a realm override for a setting',
-    description: 'Upserts this realm\'s override value for an allowed setting key.',
+    description:
+      "Upserts this realm's override value for an allowed setting key.",
   })
   @ApiParam(KEY_PARAM)
   @ApiResponse({ status: 200, description: 'Setting override saved.' })
-  @ApiResponse({ status: 400, description: 'Not an allowed setting key, or value fails validation for its value type.' })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Not an allowed setting key, or value fails validation for its value type.',
+  })
   async set(
     @Req() req: AuthRequest,
     @Param('key') key: string,
     @Body() dto: SetSettingDto,
   ) {
-    const result = await this.settingsService.set(req.user.realmId!, key, dto.value);
+    const result = await this.settingsService.set(
+      req.user.realmId!,
+      key,
+      dto.value,
+    );
     return plainToInstance(SettingResponseDto, result, {
       excludeExtraneousValues: true,
     });
@@ -77,11 +91,15 @@ export class SettingsController {
   @Delete(':key')
   @ApiOperation({
     summary: 'Reset a setting to its default',
-    description: 'Removes this realm\'s override so the setting falls back to its default value.',
+    description:
+      "Removes this realm's override so the setting falls back to its default value.",
   })
   @ApiParam(KEY_PARAM)
   @ApiResponse({ status: 200, description: 'Override removed.' })
-  @ApiResponse({ status: 404, description: 'No override exists for this key in this realm.' })
+  @ApiResponse({
+    status: 404,
+    description: 'No override exists for this key in this realm.',
+  })
   async reset(@Req() req: AuthRequest, @Param('key') key: string) {
     const result = await this.settingsService.reset(req.user.realmId!, key);
     return plainToInstance(SettingResponseDto, result, {

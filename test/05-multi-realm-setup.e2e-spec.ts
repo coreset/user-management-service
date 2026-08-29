@@ -11,11 +11,28 @@ import {
 
 const MASTER = process.env.MASTER_REALM_NAME || 'master';
 const PAWN = 'pawn';
-const USER_A = { username: 'userA', password: 'Passw0rd123', email: 'userA@example.com', firstName: 'User', lastName: 'Alpha' };
-const USER_B = { username: 'userB', password: 'Passw0rd456', email: 'userB@example.com', firstName: 'User', lastName: 'Beta' };
+const USER_A = {
+  username: 'userA',
+  password: 'Passw0rd123',
+  email: 'userA@example.com',
+  firstName: 'User',
+  lastName: 'Alpha',
+};
+const USER_B = {
+  username: 'userB',
+  password: 'Passw0rd456',
+  email: 'userB@example.com',
+  firstName: 'User',
+  lastName: 'Beta',
+};
 const MANAGER_A_ROLE = { name: 'ManagerA', displayName: 'Manager A Role' };
 const MANAGER_B_ROLE = { name: 'ManagerB', displayName: 'Manager B Role' };
-const ROLE_PERMISSION_NAMES = ['roles:read', 'roles:create', 'roles:delete', 'roles:update'];
+const ROLE_PERMISSION_NAMES = [
+  'roles:read',
+  'roles:create',
+  'roles:delete',
+  'roles:update',
+];
 
 /** Fetches a realm's permission catalog and resolves the ids for the given names. */
 async function fetchPermissionIds(
@@ -139,7 +156,12 @@ describe('Multi-realm setup, permissions, and role assignment isolation (e2e)', 
   // ========== Requirements 6-7: Permission assignment (master perms) ==========
 
   it('06: super admin adds roles:read/create/delete/update (master) to ManagerA — success', async () => {
-    const permissionIds = await fetchPermissionIds(app, superAdminToken, MASTER, ROLE_PERMISSION_NAMES);
+    const permissionIds = await fetchPermissionIds(
+      app,
+      superAdminToken,
+      MASTER,
+      ROLE_PERMISSION_NAMES,
+    );
     if (permissionIds.length !== ROLE_PERMISSION_NAMES.length) {
       throw new Error('Not all role permissions found in master realm');
     }
@@ -152,7 +174,12 @@ describe('Multi-realm setup, permissions, and role assignment isolation (e2e)', 
   });
 
   it('07: super admin adds roles:read/create/delete/update (master) to ManagerB (pawn role) — access denied', async () => {
-    const permissionIds = await fetchPermissionIds(app, superAdminToken, MASTER, ROLE_PERMISSION_NAMES);
+    const permissionIds = await fetchPermissionIds(
+      app,
+      superAdminToken,
+      MASTER,
+      ROLE_PERMISSION_NAMES,
+    );
 
     // Assigning MASTER-realm permission ids to a PAWN-realm role: the service
     // looks the ids up scoped to role.realm.id, so none of them resolve -> 400.
@@ -183,7 +210,12 @@ describe('Multi-realm setup, permissions, and role assignment isolation (e2e)', 
     // 19 ("userB read pawn realm roles -> success") and 26 ("userB create role in
     // pawn -> success") to be reachable at all: ManagerB needs its OWN realm's
     // roles:* permissions, since step 07 correctly blocks the master ones.
-    const permissionIds = await fetchPermissionIds(app, superAdminToken, PAWN, ROLE_PERMISSION_NAMES);
+    const permissionIds = await fetchPermissionIds(
+      app,
+      superAdminToken,
+      PAWN,
+      ROLE_PERMISSION_NAMES,
+    );
     if (permissionIds.length !== ROLE_PERMISSION_NAMES.length) {
       throw new Error('Not all role permissions found in pawn realm');
     }

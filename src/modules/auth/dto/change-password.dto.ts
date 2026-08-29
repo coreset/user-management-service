@@ -17,6 +17,8 @@ export class ChangePasswordDto {
   })
   @IsString()
   @MinLength(6)
-  @Matches(/^(?=.*[0-9])/, { message: 'Password must contain at lease on number' })
+  @Matches(/^(?=.*[0-9])/, {
+    message: 'Password must contain at lease on number',
+  })
   newPassword!: string;
 }

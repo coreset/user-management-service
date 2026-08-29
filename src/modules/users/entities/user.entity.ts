@@ -75,7 +75,12 @@ export class User {
   @Column({ name: 'last_login_at', type: 'timestamp', nullable: true })
   lastLoginAt: Date | null;
 
-  @Column({ name: 'last_login_ip', type: 'varchar', length: 64, nullable: true })
+  @Column({
+    name: 'last_login_ip',
+    type: 'varchar',
+    length: 64,
+    nullable: true,
+  })
   lastLoginIp: string | null;
 
   @DeleteDateColumn({ name: 'deleted_at' })
@@ -90,7 +95,7 @@ export class User {
   @OneToMany(() => UserClientRole, (userClientRole) => userClientRole.user)
   userClientRoles: UserClientRole[];
 
-  @CreateDateColumn({ name: 'created_at'})
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   @UpdateDateColumn({ name: 'updated_at' })

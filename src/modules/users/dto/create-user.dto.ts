@@ -1,6 +1,14 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsString, IsUrl, IsOptional, MinLength, MaxLength, Matches, IsNotEmpty } from 'class-validator';
-
+import {
+  IsEmail,
+  IsString,
+  IsUrl,
+  IsOptional,
+  MinLength,
+  MaxLength,
+  Matches,
+  IsNotEmpty,
+} from 'class-validator';
 
 const NAME_REGEX = /^[a-zA-ZÀ-ÖØ-öø-ÿ\s'-]+$/;
 export class CreateUserDto {
@@ -16,7 +24,8 @@ export class CreateUserDto {
   @MinLength(3)
   @MaxLength(20)
   @Matches(/^[a-zA-Z][a-zA-Z0-9_.]*[a-zA-Z0-9]$/, {
-    message: 'username must start with a letter, end with a letter/number, and not contain spaces',
+    message:
+      'username must start with a letter, end with a letter/number, and not contain spaces',
   })
   @Matches(/^(?!.*[_.]{2})/, {
     message: 'username must not contain consecutive underscores or dots',
@@ -26,30 +35,32 @@ export class CreateUserDto {
   @ApiProperty({
     name: 'firstName',
     required: true,
-    example: 'Samadhi'
+    example: 'Samadhi',
   })
   @IsString()
   @IsNotEmpty()
   @MinLength(2)
   @MaxLength(50)
   @Matches(NAME_REGEX, {
-    message: 'firstName must contain only letters, spaces, hyphens, or apostrophes',
+    message:
+      'firstName must contain only letters, spaces, hyphens, or apostrophes',
   })
   firstName!: string;
 
   @ApiProperty({
     name: 'lastName',
     required: true,
-    example: 'Samadhi'
+    example: 'Samadhi',
   })
   @IsString()
-  @IsNotEmpty({ message: 'Last Name is required'})
-  @MinLength(2, { message: 'Last Name must be at least 2 characters'})
-  @MaxLength(50, { message: 'Last Name must not exceed 50 characters'})
+  @IsNotEmpty({ message: 'Last Name is required' })
+  @MinLength(2, { message: 'Last Name must be at least 2 characters' })
+  @MaxLength(50, { message: 'Last Name must not exceed 50 characters' })
   @Matches(NAME_REGEX, {
-    message: 'lastName must contain only letters, spaces, hyphens, or apostrophes',
+    message:
+      'lastName must contain only letters, spaces, hyphens, or apostrophes',
   })
-  lastName!: string; 
+  lastName!: string;
 
   @ApiProperty({
     name: 'email',
@@ -63,7 +74,7 @@ export class CreateUserDto {
   @ApiProperty({
     name: 'avatarUrl',
     required: false,
-    example: 'https://i.pravatar.cc/300'
+    example: 'https://i.pravatar.cc/300',
   })
   @IsOptional()
   @IsString()
@@ -78,8 +89,10 @@ export class CreateUserDto {
   @IsString()
   @MinLength(6)
   /**
-   * @TODO password validation must be dynamic 
+   * @TODO password validation must be dynamic
    */
-  @Matches(/^(?=.*[0-9])/, { message: 'Password must contain at lease on number' })
+  @Matches(/^(?=.*[0-9])/, {
+    message: 'Password must contain at lease on number',
+  })
   password!: string;
 }

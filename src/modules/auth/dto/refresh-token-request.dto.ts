@@ -11,7 +11,10 @@ export class RefreshTokenRequestDto {
   @IsNotEmpty()
   client_id!: string;
 
-  @ApiProperty({ required: false, description: 'Required unless the client is public' })
+  @ApiProperty({
+    required: false,
+    description: 'Required unless the client is public',
+  })
   @IsOptional()
   @IsString()
   client_secret?: string;

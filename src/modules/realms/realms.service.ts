@@ -112,7 +112,9 @@ export class RealmsService {
    * (e.g. pawn-backend's jwks-rsa client) can fetch the public keys and verify
    * RS256 access tokens. Only public material is exposed — never the private key.
    */
-  async getJwks(realmName: string): Promise<{ keys: Record<string, unknown>[] }> {
+  async getJwks(
+    realmName: string,
+  ): Promise<{ keys: Record<string, unknown>[] }> {
     const keys = await this.realmKeyRepo.find({
       where: { isActive: true, algorithm: 'RS256', realm: { realmName } },
       relations: ['realm'],

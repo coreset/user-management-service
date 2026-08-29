@@ -9,7 +9,14 @@ import {
   NotFoundException,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { ClientRolesService } from '../services/client-roles.service';
 import { CreateClientRoleDto } from '../dto/create-client-role.dto';
@@ -73,18 +80,29 @@ export class ClientRolesController {
   @Post()
   @ApiOperation({
     summary: 'Create a client role',
-    description: 'Creates a new role scoped to the given client within the given realm.',
+    description:
+      'Creates a new role scoped to the given client within the given realm.',
   })
   @ApiResponse({ status: 201, description: 'Client role created.' })
-  @ApiResponse({ status: 404, description: "Realm not found, or client not found in this realm." })
-  @ApiResponse({ status: 409, description: 'A role with this name already exists on this client.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Realm not found, or client not found in this realm.',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'A role with this name already exists on this client.',
+  })
   async create(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
     @Body() dto: CreateClientRoleDto,
   ) {
     const realmId = await this.resolveRealmId(realmName);
-    const result = await this.clientRolesService.createClientRole(realmId, clientId, dto);
+    const result = await this.clientRolesService.createClientRole(
+      realmId,
+      clientId,
+      dto,
+    );
     return plainToInstance(RoleResponseDto, result, {
       excludeExtraneousValues: true,
     });
@@ -96,12 +114,36 @@ export class ClientRolesController {
     summary: 'List client roles',
     description: 'Lists all roles defined on the given client (paginated).',
   })
-  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
-  @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page (max 100)' })
-  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
-  @ApiQuery({ name: 'search', required: false, example: 'Admin', description: 'Search by client role name' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    example: 1,
+    description: 'Page number (1-indexed)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    example: 10,
+    description: 'Items per page (max 100)',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    enum: ['asc', 'desc', 'ASC', 'DESC'],
+    example: 'DESC',
+    description: 'Sort direction',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    example: 'Admin',
+    description: 'Search by client role name',
+  })
   @ApiResponse({ status: 200, description: 'Paginated list of client roles.' })
-  @ApiResponse({ status: 404, description: 'Realm not found, or client not found in this realm.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Realm not found, or client not found in this realm.',
+  })
   async findAll(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
@@ -140,10 +182,24 @@ export class ClientRolesController {
   @Post(':clientRoleId/users/:userId')
   @ApiOperation({ summary: 'Assign a user to a client role' })
   @ApiParam(CLIENT_ROLE_ID_PARAM)
-  @ApiParam({ name: 'userId', required: true, format: 'uuid', description: 'UUID of the user to assign' })
-  @ApiResponse({ status: 201, description: 'User assigned to the client role.' })
-  @ApiResponse({ status: 404, description: 'Realm, client, or client role not found.' })
-  @ApiResponse({ status: 409, description: 'User already has this client role.' })
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    format: 'uuid',
+    description: 'UUID of the user to assign',
+  })
+  @ApiResponse({
+    status: 201,
+    description: 'User assigned to the client role.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Realm, client, or client role not found.',
+  })
+  @ApiResponse({
+    status: 409,
+    description: 'User already has this client role.',
+  })
   async assignUser(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
@@ -166,14 +222,25 @@ export class ClientRolesController {
   @Delete(':clientRoleId/users/:userId')
   @ApiOperation({ summary: 'Unassign a user from a client role' })
   @ApiParam(CLIENT_ROLE_ID_PARAM)
-  @ApiParam({ name: 'userId', required: true, format: 'uuid', description: 'UUID of the user to unassign' })
-  @ApiResponse({ status: 200, description: 'User unassigned from the client role.' })
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    format: 'uuid',
+    description: 'UUID of the user to unassign',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'User unassigned from the client role.',
+  })
   @ApiResponse({ status: 404, description: 'Assignment not found.' })
   unassignUser(
     @Param('clientRoleId', ParseUUIDPipe) clientRoleId: string,
     @Param('userId', ParseUUIDPipe) userId: string,
   ) {
-    return this.clientRolesService.unassignClientRoleFromUser(userId, clientRoleId);
+    return this.clientRolesService.unassignClientRoleFromUser(
+      userId,
+      clientRoleId,
+    );
   }
 
   // ----- Client role <-> Permissions -----------------------------------------
@@ -182,11 +249,19 @@ export class ClientRolesController {
   @Post(':clientRoleId/permissions')
   @ApiOperation({
     summary: 'Assign permissions to a client role',
-    description: 'Assigns one or more realm-scoped permissions to a client role.',
+    description:
+      'Assigns one or more realm-scoped permissions to a client role.',
   })
   @ApiParam(CLIENT_ROLE_ID_PARAM)
-  @ApiResponse({ status: 201, description: 'Permissions assigned to the client role.' })
-  @ApiResponse({ status: 404, description: 'Realm, client, or client role not found; or one or more permissions not found in this realm.' })
+  @ApiResponse({
+    status: 201,
+    description: 'Permissions assigned to the client role.',
+  })
+  @ApiResponse({
+    status: 404,
+    description:
+      'Realm, client, or client role not found; or one or more permissions not found in this realm.',
+  })
   async addPermissions(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
@@ -209,8 +284,14 @@ export class ClientRolesController {
   @Get(':clientRoleId/permissions')
   @ApiOperation({ summary: 'List permissions granted by a client role' })
   @ApiParam(CLIENT_ROLE_ID_PARAM)
-  @ApiResponse({ status: 200, description: 'List of permissions granted by the client role.' })
-  @ApiResponse({ status: 404, description: 'Realm, client, or client role not found.' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of permissions granted by the client role.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Realm, client, or client role not found.',
+  })
   async listPermissions(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
@@ -231,8 +312,14 @@ export class ClientRolesController {
   @Get(':clientRoleId/users')
   @ApiOperation({ summary: 'List users assigned to a client role' })
   @ApiParam(CLIENT_ROLE_ID_PARAM)
-  @ApiResponse({ status: 200, description: 'List of users assigned to the client role.' })
-  @ApiResponse({ status: 404, description: 'Realm, client, or client role not found.' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of users assigned to the client role.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Realm, client, or client role not found.',
+  })
   async listUsers(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
@@ -253,9 +340,20 @@ export class ClientRolesController {
   @Delete(':clientRoleId/permissions/:permissionId')
   @ApiOperation({ summary: 'Remove a permission from a client role' })
   @ApiParam(CLIENT_ROLE_ID_PARAM)
-  @ApiParam({ name: 'permissionId', required: true, format: 'uuid', description: 'UUID of the permission to remove' })
-  @ApiResponse({ status: 200, description: 'Permission removed from the client role.' })
-  @ApiResponse({ status: 404, description: 'Realm, client, or client role not found.' })
+  @ApiParam({
+    name: 'permissionId',
+    required: true,
+    format: 'uuid',
+    description: 'UUID of the permission to remove',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Permission removed from the client role.',
+  })
+  @ApiResponse({
+    status: 404,
+    description: 'Realm, client, or client role not found.',
+  })
   async removePermission(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
@@ -276,17 +374,25 @@ export class ClientRolesController {
   @Get('users/:userId')
   @ApiOperation({
     summary: "List a user's client roles",
-    description: 'Returns the client roles currently assigned to this user, for this client.',
+    description:
+      'Returns the client roles currently assigned to this user, for this client.',
   })
   @ApiParam(USER_ID_PARAM)
-  @ApiResponse({ status: 200, description: "The user's client roles for this client." })
+  @ApiResponse({
+    status: 200,
+    description: "The user's client roles for this client.",
+  })
   async listForUser(
     @Param('realmName') realmName: string,
     @Param('clientId', ParseUUIDPipe) clientId: string,
     @Param('userId', ParseUUIDPipe) userId: string,
   ) {
     const realmId = await this.resolveRealmId(realmName);
-    const assignments = await this.clientRolesService.findRolesForUser(realmId, clientId, userId);
+    const assignments = await this.clientRolesService.findRolesForUser(
+      realmId,
+      clientId,
+      userId,
+    );
     const result = assignments.map((assignment) => ({
       id: assignment.clientRole.id,
       name: assignment.clientRole.name,
@@ -294,6 +400,8 @@ export class ClientRolesController {
       clientId: assignment.client.id,
       clientName: assignment.client.name,
     }));
-    return plainToInstance(ClientRoleResponseDto, result, { excludeExtraneousValues: true });
+    return plainToInstance(ClientRoleResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 }

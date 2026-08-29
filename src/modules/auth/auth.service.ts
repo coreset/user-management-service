@@ -51,12 +51,10 @@ export type LoginContext = {
   rememberMe?: boolean;
 };
 
-
 enum NotifyType {
-  URL= 'url',
-  CODE= 'code',
+  URL = 'url',
+  CODE = 'code',
 }
-
 
 @Injectable()
 export class AuthService {
@@ -69,10 +67,14 @@ export class AuthService {
     private readonly settingsService: SettingsService,
     private readonly logger: AppLoggerService,
     @InjectRepository(User) private UserRepo: Repository<User>,
-    @InjectRepository(RefreshToken) private RefreshTokenRepo: Repository<RefreshToken>,
-    @InjectRepository(UserVerificationIdentifier) private UserVerificationIdentifierRepo: Repository<UserVerificationIdentifier>,
-    @InjectRepository(UserSession) private userSessionRepo: Repository<UserSession>,
-    @InjectRepository(PasswordHistory) private passwordHistoryRepo: Repository<PasswordHistory>,
+    @InjectRepository(RefreshToken)
+    private RefreshTokenRepo: Repository<RefreshToken>,
+    @InjectRepository(UserVerificationIdentifier)
+    private UserVerificationIdentifierRepo: Repository<UserVerificationIdentifier>,
+    @InjectRepository(UserSession)
+    private userSessionRepo: Repository<UserSession>,
+    @InjectRepository(PasswordHistory)
+    private passwordHistoryRepo: Repository<PasswordHistory>,
   ) {}
 
   /**
@@ -166,8 +168,15 @@ export class AuthService {
    * Increments the failed-login counter and locks the account once the realm's
    * `max_login_attempts` threshold is reached, for `lockout_duration_seconds`.
    */
-  private async registerFailedAttempt(user: User, realmId: string): Promise<void> {
-    const maxAttempts = await this.getIntSetting(realmId, 'max_login_attempts', 5);
+  private async registerFailedAttempt(
+    user: User,
+    realmId: string,
+  ): Promise<void> {
+    const maxAttempts = await this.getIntSetting(
+      realmId,
+      'max_login_attempts',
+      5,
+    );
     const lockoutSeconds = await this.getIntSetting(
       realmId,
       'lockout_duration_seconds',
@@ -248,9 +257,9 @@ export class AuthService {
    *     this service and is also stored argon2-hashed in the DB, so asymmetric
    *     signing would add nothing here.
    */
-  
+
   /**
-   * @see 
+   * @see
    */
   async login(userId: string, context?: LoginContext, preloaded?: User) {
     // Reuse the caller's already-loaded user when provided (the local-login path
@@ -260,13 +269,17 @@ export class AuthService {
     if (!user) throw new NotFoundException('User not found');
 
     const realmName = user.realm?.realmName;
-    if (!realmName) throw new NotFoundException('User is not attached to a realm');
+    if (!realmName)
+      throw new NotFoundException('User is not attached to a realm');
 
     const payload: AuthJwtPayload = { sub: userId, realm: realmName };
 
     // ----- Access token: RS256 with the realm's active private key -----------
     const signingKey = await this.realmsService.getActiveSigningKey(realmName);
-    const accessExpiresIn = this.configService.get<string>('JWT_EXPIRE_IN', '1d');
+    const accessExpiresIn = this.configService.get<string>(
+      'JWT_EXPIRE_IN',
+      '1d',
+    );
     const token = this.jwtService.sign(payload, {
       secret: signingKey.privateKey,
       algorithm: 'RS256',
@@ -275,8 +288,14 @@ export class AuthService {
     });
 
     // ----- Refresh token: stays HS256 (internal-only, also DB-hashed) --------
-    const refreshSecret = this.configService.get<string>('REFRESH_JWT_SECRET', '');
-    const refreshExpiresIn = this.configService.get<string>('REFRESH_JWT_EXPIRE_IN', '');
+    const refreshSecret = this.configService.get<string>(
+      'REFRESH_JWT_SECRET',
+      '',
+    );
+    const refreshExpiresIn = this.configService.get<string>(
+      'REFRESH_JWT_EXPIRE_IN',
+      '',
+    );
     const refreshToken = this.jwtService.sign(payload, {
       secret: refreshSecret,
       expiresIn: refreshExpiresIn,
@@ -350,7 +369,9 @@ export class AuthService {
     const secret = this.configService.get<string>('REFRESH_JWT_SECRET', '');
     let payload: AuthJwtPayload;
     try {
-      payload = this.jwtService.verify<AuthJwtPayload>(oldRefreshToken, { secret });
+      payload = this.jwtService.verify<AuthJwtPayload>(oldRefreshToken, {
+        secret,
+      });
     } catch {
       throw new UnauthorizedException('invalid_grant');
     }
@@ -388,9 +409,13 @@ export class AuthService {
 
     // Generate new access and refresh tokens
     const secret = this.configService.get<string>('REFRESH_JWT_SECRET', '');
-    const expiresIn = this.configService.get<string>('REFRESH_JWT_EXPIRE_IN', '');
+    const expiresIn = this.configService.get<string>(
+      'REFRESH_JWT_EXPIRE_IN',
+      '',
+    );
     const realmName = user.realm?.realmName;
-    if (!realmName) throw new NotFoundException('User is not attached to a realm');
+    if (!realmName)
+      throw new NotFoundException('User is not attached to a realm');
     const payload: AuthJwtPayload = { sub: userId, realm: realmName };
 
     // Access token must be RS256 (realm key) to match the jwt-rs256 guard.
@@ -401,7 +426,10 @@ export class AuthService {
       keyid: signingKey.kid,
       expiresIn: this.configService.get<string>('JWT_EXPIRE_IN', '1d'),
     });
-    const newRefreshToken = this.jwtService.sign(payload, { secret, expiresIn });
+    const newRefreshToken = this.jwtService.sign(payload, {
+      secret,
+      expiresIn,
+    });
 
     // Hash and save new refresh token
     const hashedNewRefreshToken = await argon2.hash(newRefreshToken);
@@ -444,11 +472,11 @@ export class AuthService {
   //   return 'This action adds a new auth';
   // }
   /**
-   * @see 
+   * @see
    */
   async register(registerDto: LocalRegisterDto, realmName: string) {
     const { email, firstName, lastName, avatarUrl, password } = registerDto;
-    let userName:string = '';
+    let userName: string = '';
     if (!registerDto.username) {
       userName = registerDto.email;
     } else {
@@ -468,24 +496,29 @@ export class AuthService {
       throw new ConflictException('Email is already registered');
     }
 
-    const userByUsername = await this.userService.findByUsername(userName, realmId);
+    const userByUsername = await this.userService.findByUsername(
+      userName,
+      realmId,
+    );
     if (userByUsername) {
       throw new ConflictException('Username is already registered');
     }
 
     // check realm settings for user registration
     const settings = await this.settingsService.list(realmId);
-    settings.forEach(setting => {
+    settings.forEach((setting) => {
       switch (setting.key) {
         case 'allow_user_registration':
           const { value } = setting;
-          if (value == 'false' ) throw new UnprocessableEntityException('This organization not allow user registration')
+          if (value == 'false')
+            throw new UnprocessableEntityException(
+              'This organization not allow user registration',
+            );
           break;
         default:
-          null
-
+          null;
       }
-    })
+    });
 
     const user = this.UserRepo.create({
       username: userName,
@@ -503,8 +536,6 @@ export class AuthService {
     } catch (error) {
       throw new InternalServerErrorException('Failed to register user');
     }
-
-
   }
 
   findAll(userId: string) {
@@ -525,7 +556,10 @@ export class AuthService {
     return `This action removes a #${id} auth`;
   }
 
-  async signOutCurrentDevice(userId: string, refreshToken: string): Promise<void> {
+  async signOutCurrentDevice(
+    userId: string,
+    refreshToken: string,
+  ): Promise<void> {
     const tokens = await this.RefreshTokenRepo.find({
       where: { user: { id: userId } },
     });
@@ -543,7 +577,9 @@ export class AuthService {
         return;
       }
     }
-    throw new ForbiddenException('Refresh token not found or already invalidated');
+    throw new ForbiddenException(
+      'Refresh token not found or already invalidated',
+    );
   }
 
   async signOutAllDevices(userId: string): Promise<void> {
@@ -586,7 +622,8 @@ export class AuthService {
 
     // Process client role permissions
     for (const userClientRole of user.userClientRoles ?? []) {
-      const clientRolePermissions = userClientRole.clientRole?.permissions ?? [];
+      const clientRolePermissions =
+        userClientRole.clientRole?.permissions ?? [];
       for (const permission of clientRolePermissions) {
         permissionSet.add(permission.name);
       }
@@ -618,7 +655,11 @@ export class AuthService {
     return await this.userService.create(googleUser, realmName);
   }
 
-  async changePassword(userId: string, oldPassword: string, newPassword: string) {
+  async changePassword(
+    userId: string,
+    oldPassword: string,
+    newPassword: string,
+  ) {
     // find the user
     const user = await this.userService.findById(userId);
     if (!user) throw new UnauthorizedException('User not found!');
@@ -700,11 +741,14 @@ export class AuthService {
     });
 
     // 3. Generate expiration
-    const expiresIn = this.configService.get<string>('PASSWORD_RESET_TOKEN_EXPIRE_IN', '');
+    const expiresIn = this.configService.get<string>(
+      'PASSWORD_RESET_TOKEN_EXPIRE_IN',
+      '',
+    );
     const expiresAt = new Date(Date.now() + parseExpiry(expiresIn));
 
     if (type === NotifyType.URL) {
-      // Generate token 
+      // Generate token
       const resetToken = randomBytes(32).toString('hex');
       const hashedToken = await hash(resetToken, 10);
 
@@ -716,12 +760,14 @@ export class AuthService {
         type: NotifyType.URL,
       });
 
-      const frontendUrl = this.configService.get<string>('FRONTEND_BASE_URL', '');
+      const frontendUrl = this.configService.get<string>(
+        'FRONTEND_BASE_URL',
+        '',
+      );
       const resetUrl = new URL(`${frontendUrl}/verify-identifier`);
       resetUrl.searchParams.set('token', resetToken);
       resetUrl.searchParams.set('id', user.id.toString());
       console.log('reset url:', resetUrl.toString());
-
     } else if (type === NotifyType.CODE) {
       // Generate pin code
       const rawCode = Math.floor(100000 + Math.random() * 900000).toString(); // 6-digit

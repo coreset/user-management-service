@@ -20,7 +20,9 @@ export class UserRealmRole {
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @ManyToOne(() => Realm, (realm) => realm.userRealmRoles, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Realm, (realm) => realm.userRealmRoles, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'realm_id' })
   realm: Realm;
 

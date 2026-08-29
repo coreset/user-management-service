@@ -36,8 +36,17 @@ export class AuditService {
   }
 
   async findAuditLogs(query: AuditLogQueryDto) {
-    const { page, limit, sortBy, order, category, action, tableName, recordId, actorId } =
-      query;
+    const {
+      page,
+      limit,
+      sortBy,
+      order,
+      category,
+      action,
+      tableName,
+      recordId,
+      actorId,
+    } = query;
     const where: FindOptionsWhere<AuditLog> = {};
     if (category) where.category = category;
     if (action) where.action = action;
@@ -67,7 +76,11 @@ export class AuditService {
    * Walks the whole chain recomputing each hash; reports the first row whose
    * stored hash doesn't match — evidence of tampering or a deleted row.
    */
-  async verifyChain(): Promise<{ valid: boolean; checked: number; brokenAt?: string }> {
+  async verifyChain(): Promise<{
+    valid: boolean;
+    checked: number;
+    brokenAt?: string;
+  }> {
     const rows = await this.auditLogRepo.find({
       order: { createdAt: 'ASC', id: 'ASC' },
     });

@@ -29,7 +29,9 @@ export class ClientRole {
   @JoinColumn({ name: 'realm_id' })
   realm: Realm;
 
-  @ManyToOne(() => Client, (client) => client.clientRoles, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Client, (client) => client.clientRoles, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'client_id' })
   client: Client;
 
@@ -49,7 +51,9 @@ export class ClientRole {
   @OneToMany(() => UserClientRole, (ucr) => ucr.clientRole)
   userClientRoles: UserClientRole[];
 
-  @ManyToMany(() => Permission, (permission) => permission.clientRoles, { cascade: true })
+  @ManyToMany(() => Permission, (permission) => permission.clientRoles, {
+    cascade: true,
+  })
   @JoinTable({
     name: 'client_role_permissions',
     joinColumn: { name: 'client_role_id' },

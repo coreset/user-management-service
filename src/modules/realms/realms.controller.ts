@@ -9,7 +9,14 @@ import {
   ParseUUIDPipe,
   Query,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiParam, ApiQuery, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBearerAuth,
+  ApiOperation,
+  ApiParam,
+  ApiQuery,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { RealmsService } from './realms.service';
 import { CreateRealmDto } from './dto/create-realm.dto';
@@ -37,10 +44,14 @@ export class RealmsController {
   @Post()
   @ApiOperation({
     summary: 'Create a realm',
-    description: 'Creates a new realm and auto-generates its RSA signing key pair.',
+    description:
+      'Creates a new realm and auto-generates its RSA signing key pair.',
   })
   @ApiResponse({ status: 201, description: 'Realm created.' })
-  @ApiResponse({ status: 409, description: "A realm with this realmName already exists." })
+  @ApiResponse({
+    status: 409,
+    description: 'A realm with this realmName already exists.',
+  })
   async create(@Body() createRealmDto: CreateRealmDto) {
     const result = await this.realmsService.create(createRealmDto);
     return plainToInstance(RealmResponseDto, result, {
@@ -52,13 +63,41 @@ export class RealmsController {
   @Get()
   @ApiOperation({
     summary: 'List realms',
-    description: 'Lists every realm (paginated), optionally filtered by realm name.',
+    description:
+      'Lists every realm (paginated), optionally filtered by realm name.',
   })
-  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
-  @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page (max 100)' })
-  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
-  @ApiQuery({ name: 'search', required: false, example: 'master', description: 'Search by realm name (wildcard)' })
-  @ApiQuery({ name: 'isActive', required: false, example: true, type: Boolean, description: 'Filter by active status' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    example: 1,
+    description: 'Page number (1-indexed)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    example: 10,
+    description: 'Items per page (max 100)',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    enum: ['asc', 'desc', 'ASC', 'DESC'],
+    example: 'DESC',
+    description: 'Sort direction',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    example: 'master',
+    description: 'Search by realm name (wildcard)',
+  })
+  @ApiQuery({
+    name: 'isActive',
+    required: false,
+    example: true,
+    type: Boolean,
+    description: 'Filter by active status',
+  })
   @ApiResponse({ status: 200, description: 'Paginated list of realms.' })
   async findAll(@Query() queryDto: RealmQueryDto) {
     const result = await this.realmsService.findAllPaginated(
@@ -85,7 +124,10 @@ export class RealmsController {
     example: 'master',
     description: 'Name of the realm to fetch',
   })
-  @ApiResponse({ status: 200, description: 'The requested realm, or null if no realm has this name.' })
+  @ApiResponse({
+    status: 200,
+    description: 'The requested realm, or null if no realm has this name.',
+  })
   async findOne(@Param('realmName') realmName: string) {
     const result = await this.realmsService.findByName(realmName);
     return plainToInstance(RealmResponseDto, result, {
@@ -97,7 +139,8 @@ export class RealmsController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Update a realm',
-    description: 'Partially updates a realm (any subset of fields) by its UUID.',
+    description:
+      'Partially updates a realm (any subset of fields) by its UUID.',
   })
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'Realm updated.' })

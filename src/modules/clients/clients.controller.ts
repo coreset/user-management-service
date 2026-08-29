@@ -58,7 +58,10 @@ export class ClientsController {
   })
   @ApiResponse({ status: 201, description: 'Client created.' })
   @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
-  @ApiResponse({ status: 409, description: 'A client with this clientId already exists in this realm.' })
+  @ApiResponse({
+    status: 409,
+    description: 'A client with this clientId already exists in this realm.',
+  })
   async create(
     @Param('realmName') realmName: string,
     @Body() createClientDto: CreateClientDto,
@@ -74,14 +77,44 @@ export class ClientsController {
   @Get()
   @ApiOperation({
     summary: 'List clients',
-    description: 'Lists all clients registered within the given realm (paginated).',
+    description:
+      'Lists all clients registered within the given realm (paginated).',
   })
-  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
-  @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page (max 100)' })
-  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
-  @ApiQuery({ name: 'search', required: false, example: 'pawn-backend', description: 'Search by client name or client ID' })
-  @ApiQuery({ name: 'isActive', required: false, example: true, description: 'Filter by active status' })
-  @ApiResponse({ status: 200, description: 'Paginated list of clients in the realm.' })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    example: 1,
+    description: 'Page number (1-indexed)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    example: 10,
+    description: 'Items per page (max 100)',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    enum: ['asc', 'desc', 'ASC', 'DESC'],
+    example: 'DESC',
+    description: 'Sort direction',
+  })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    example: 'pawn-backend',
+    description: 'Search by client name or client ID',
+  })
+  @ApiQuery({
+    name: 'isActive',
+    required: false,
+    example: true,
+    description: 'Filter by active status',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Paginated list of clients in the realm.',
+  })
   @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
   async findAll(
     @Param('realmName') realmName: string,
@@ -105,11 +138,15 @@ export class ClientsController {
   @Get(':id')
   @ApiOperation({
     summary: 'Get a client by id',
-    description: 'Fetches a single client by its UUID, scoped to the given realm.',
+    description:
+      'Fetches a single client by its UUID, scoped to the given realm.',
   })
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'The requested client.' })
-  @ApiResponse({ status: 404, description: 'Realm not found, or client not found in this realm.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Realm not found, or client not found in this realm.',
+  })
   async findOne(
     @Param('realmName') realmName: string,
     @Param('id', ParseUUIDPipe) id: string,
@@ -125,18 +162,26 @@ export class ClientsController {
   @Patch(':id')
   @ApiOperation({
     summary: 'Update a client',
-    description: 'Partially updates a client (any subset of fields) within the given realm.',
+    description:
+      'Partially updates a client (any subset of fields) within the given realm.',
   })
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'Client updated.' })
-  @ApiResponse({ status: 404, description: 'Realm not found, or client not found in this realm.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Realm not found, or client not found in this realm.',
+  })
   async update(
     @Param('realmName') realmName: string,
     @Param('id', ParseUUIDPipe) id: string,
     @Body() updateClientDto: UpdateClientDto,
   ) {
     const realmId = await this.clientsService.resolveRealmId(realmName);
-    const result = await this.clientsService.update(realmId, id, updateClientDto);
+    const result = await this.clientsService.update(
+      realmId,
+      id,
+      updateClientDto,
+    );
     return plainToInstance(ClientResponseDto, result, {
       excludeExtraneousValues: true,
     });
@@ -151,7 +196,10 @@ export class ClientsController {
   })
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 204, description: 'Client deleted.' })
-  @ApiResponse({ status: 404, description: 'Realm not found, or client not found in this realm.' })
+  @ApiResponse({
+    status: 404,
+    description: 'Realm not found, or client not found in this realm.',
+  })
   async remove(
     @Param('realmName') realmName: string,
     @Param('id', ParseUUIDPipe) id: string,

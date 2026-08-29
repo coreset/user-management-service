@@ -64,5 +64,4 @@ import { SettingsModule } from '../settings/settings.module';
   ],
   exports: [JwtModule, JwtStrategy, JwtRs256Guard],
 })
-
 export class AuthModule {}

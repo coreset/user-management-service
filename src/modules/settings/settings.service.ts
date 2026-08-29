@@ -36,7 +36,9 @@ export class SettingsService {
       this.definitionRepo.find(),
       this.settingRepo.find({ where: { realm: { id: realmId } } }),
     ]);
-    const overrideMap = new Map(overrides.map((o) => [o.settingKey, o.settingValue]));
+    const overrideMap = new Map(
+      overrides.map((o) => [o.settingKey, o.settingValue]),
+    );
 
     return definitions.map((def) => {
       const isOverridden = overrideMap.has(def.settingKey);
@@ -55,14 +57,16 @@ export class SettingsService {
   }
 
   async get(realmId: string, key: string): Promise<EffectiveSetting> {
-    const def = await this.definitionRepo.findOne({ where: { settingKey: key } });
+    const def = await this.definitionRepo.findOne({
+      where: { settingKey: key },
+    });
     if (!def) throw new NotFoundException(`Unknown setting '${key}'`);
 
     const override = await this.settingRepo.findOne({
       where: { realm: { id: realmId }, settingKey: key },
     });
     const isOverridden = !!override;
-    const raw = isOverridden ? override!.settingValue : def.defaultValue;
+    const raw = isOverridden ? override.settingValue : def.defaultValue;
     return {
       key: def.settingKey,
       value: def.isEncrypted && isOverridden ? MASKED : raw,
@@ -74,8 +78,14 @@ export class SettingsService {
   }
 
   /** Upsert a realm's override for an allowed setting key. */
-  async set(realmId: string, key: string, value: string): Promise<EffectiveSetting> {
-    const def = await this.definitionRepo.findOne({ where: { settingKey: key } });
+  async set(
+    realmId: string,
+    key: string,
+    value: string,
+  ): Promise<EffectiveSetting> {
+    const def = await this.definitionRepo.findOne({
+      where: { settingKey: key },
+    });
     if (!def) {
       throw new BadRequestException(`'${key}' is not an allowed setting`);
     }

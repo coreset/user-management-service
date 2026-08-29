@@ -22,15 +22,21 @@ export class DashboardResponseDto {
   @Expose()
   totalRealmRoles: number;
 
-  @ApiProperty({ description: 'Total client-level roles, across every client in the realm' })
+  @ApiProperty({
+    description: 'Total client-level roles, across every client in the realm',
+  })
   @Expose()
   totalClientRoles: number;
 
-  @ApiProperty({ description: "Total permissions in the realm's permission catalog" })
+  @ApiProperty({
+    description: "Total permissions in the realm's permission catalog",
+  })
   @Expose()
   totalPermissions: number;
 
-  @ApiProperty({ description: 'Total OAuth/OIDC clients registered in the realm' })
+  @ApiProperty({
+    description: 'Total OAuth/OIDC clients registered in the realm',
+  })
   @Expose()
   totalClients: number;
 

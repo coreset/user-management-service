@@ -11,7 +11,11 @@ import {
 
 const MASTER = process.env.MASTER_REALM_NAME || 'master';
 const TENANT = 'tenant-a';
-const TENANT_USER = { username: 'tenantuser', password: 'Passw0rd', email: 'tenantuser@example.com' };
+const TENANT_USER = {
+  username: 'tenantuser',
+  password: 'Passw0rd',
+  email: 'tenantuser@example.com',
+};
 
 /**
  * Exercises the PermissionsGuard's realm handling end-to-end:

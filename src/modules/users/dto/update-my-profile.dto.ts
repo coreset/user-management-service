@@ -1,5 +1,13 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsUrl, MaxLength, Matches, MinLength } from 'class-validator';
+import {
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  IsUrl,
+  MaxLength,
+  Matches,
+  MinLength,
+} from 'class-validator';
 
 const NAME_REGEX = /^[a-zA-ZÀ-ÖØ-öø-ÿ\s'-]+$/;
 
@@ -16,7 +24,8 @@ export class UpdateMyProfileDto {
   @MinLength(2)
   @MaxLength(50)
   @Matches(NAME_REGEX, {
-    message: 'firstName must contain only letters, spaces, hyphens, or apostrophes',
+    message:
+      'firstName must contain only letters, spaces, hyphens, or apostrophes',
   })
   firstName?: string;
 
@@ -27,7 +36,8 @@ export class UpdateMyProfileDto {
   @MinLength(2)
   @MaxLength(50)
   @Matches(NAME_REGEX, {
-    message: 'lastName must contain only letters, spaces, hyphens, or apostrophes',
+    message:
+      'lastName must contain only letters, spaces, hyphens, or apostrophes',
   })
   lastName?: string;
 

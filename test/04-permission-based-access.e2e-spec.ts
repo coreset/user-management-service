@@ -10,7 +10,11 @@ import {
 } from './utils/test-app';
 
 const MASTER = process.env.MASTER_REALM_NAME || 'master';
-const USER_A = { username: 'userA', password: 'Passw0rd123', email: 'userA@example.com' };
+const USER_A = {
+  username: 'userA',
+  password: 'Passw0rd123',
+  email: 'userA@example.com',
+};
 const MANAGER_ROLE = { name: 'Manager', displayName: 'Manager Role' };
 
 /**
@@ -57,8 +61,14 @@ describe('Permission-based access control (e2e)', () => {
       });
 
     if (createUserRes.status !== 201) {
-      console.error('User creation failed:', createUserRes.status, createUserRes.body);
-      throw new Error(`User creation failed: ${JSON.stringify(createUserRes.body)}`);
+      console.error(
+        'User creation failed:',
+        createUserRes.status,
+        createUserRes.body,
+      );
+      throw new Error(
+        `User creation failed: ${JSON.stringify(createUserRes.body)}`,
+      );
     }
 
     // API-created user starts unverified; verify for login.
@@ -122,7 +132,9 @@ describe('Permission-based access control (e2e)', () => {
       .set('Authorization', `Bearer ${superAdminToken}`)
       .expect(200);
 
-    const userARecord = usersRes.body.find((u: any) => u.username === USER_A.username);
+    const userARecord = usersRes.body.find(
+      (u: any) => u.username === USER_A.username,
+    );
     if (!userARecord) {
       throw new Error(`User ${USER_A.username} not found`);
     }

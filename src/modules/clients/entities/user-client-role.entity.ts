@@ -16,11 +16,15 @@ export class UserClientRole {
   @PrimaryGeneratedColumn('uuid')
   id: string;
 
-  @ManyToOne(() => User, (user) => user.userClientRoles, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.userClientRoles, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'user_id' })
   user: User;
 
-  @ManyToOne(() => Client, (client) => client.userClientRoles, { onDelete: 'CASCADE' })
+  @ManyToOne(() => Client, (client) => client.userClientRoles, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'client_id' })
   client: Client;
 

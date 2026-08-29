@@ -23,7 +23,10 @@ export class ClientResponseDto {
   @Expose()
   publicClient: boolean;
 
-  @ApiProperty({ description: 'Client secret (null for public clients)', nullable: true })
+  @ApiProperty({
+    description: 'Client secret (null for public clients)',
+    nullable: true,
+  })
   @Expose()
   clientSecret: string | null;
 

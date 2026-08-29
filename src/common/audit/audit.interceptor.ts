@@ -15,9 +15,9 @@ import { auditContext, AuditStore } from './audit-context';
 @Injectable()
 export class AuditInterceptor implements NestInterceptor {
   intercept(context: ExecutionContext, next: CallHandler): Observable<unknown> {
-    const req = context
-      .switchToHttp()
-      .getRequest<{ user?: { id?: unknown; realmId?: string; username?: string } }>();
+    const req = context.switchToHttp().getRequest<{
+      user?: { id?: unknown; realmId?: string; username?: string };
+    }>();
     const user = req?.user;
     const store: AuditStore = {
       actorId: user?.id != null ? String(user.id) : undefined,

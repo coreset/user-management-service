@@ -33,7 +33,10 @@ describe('Auth & Authorization (e2e)', () => {
     it('logs in the seeded super admin and returns a token', async () => {
       const res = await request(app.getHttpServer())
         .post(`/auth/${MASTER}/login`)
-        .send({ username: SUPER_ADMIN_USERNAME, password: SUPER_ADMIN_PASSWORD })
+        .send({
+          username: SUPER_ADMIN_USERNAME,
+          password: SUPER_ADMIN_PASSWORD,
+        })
         .expect(200);
 
       expect(res.body.token).toEqual(expect.any(String));
@@ -50,7 +53,10 @@ describe('Auth & Authorization (e2e)', () => {
     it('returns 404 for an unknown realm', async () => {
       await request(app.getHttpServer())
         .post(`/auth/does-not-exist/login`)
-        .send({ username: SUPER_ADMIN_USERNAME, password: SUPER_ADMIN_PASSWORD })
+        .send({
+          username: SUPER_ADMIN_USERNAME,
+          password: SUPER_ADMIN_PASSWORD,
+        })
         .expect(404);
     });
   });

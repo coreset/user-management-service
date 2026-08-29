@@ -13,7 +13,9 @@ export class RealmQueryDto extends PaginationQueryDto {
   search?: string;
 
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? value === 'true' : value))
+  @Transform(({ value }) =>
+    typeof value === 'string' ? value === 'true' : value,
+  )
   @IsBoolean()
   @ApiPropertyOptional({
     example: true,

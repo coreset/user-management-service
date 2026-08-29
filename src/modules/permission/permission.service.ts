@@ -51,21 +51,32 @@ export class PermissionService {
 
       if (existing) {
         if (existing.deletedAt) {
-          this.logger.warn(`Restoring soft-deleted Permission ${createPermissionDto.name}`, PermissionService.name);
+          this.logger.warn(
+            `Restoring soft-deleted Permission ${createPermissionDto.name}`,
+            PermissionService.name,
+          );
           // Restoring the soft-deleted record
           await this.PermissionRepo.restore(existing.id);
 
           // Optionally update other fields
-          const updated = this.PermissionRepo.merge(existing, createPermissionDto);
+          const updated = this.PermissionRepo.merge(
+            existing,
+            createPermissionDto,
+          );
           const restoredPermission = await this.PermissionRepo.save(updated);
-          this.logger.log(`Permission restored successfully: ${restoredPermission.id}`, PermissionService.name);
+          this.logger.log(
+            `Permission restored successfully: ${restoredPermission.id}`,
+            PermissionService.name,
+          );
           return restoredPermission;
         } else {
           this.logger.error(
             `Attepmt to create dublicate permission : ${createPermissionDto.name}`,
             PermissionService.name,
           );
-          throw new ConflictException(`Permission with this name ${createPermissionDto.name} already exists in this realm`);
+          throw new ConflictException(
+            `Permission with this name ${createPermissionDto.name} already exists in this realm`,
+          );
         }
       }
 
@@ -74,14 +85,22 @@ export class PermissionService {
         realm: { id: realmId } as Realm,
       });
       const savedPermission = await this.PermissionRepo.save(newPermission);
-      this.logger.log(`Permission saved successfully: ${savedPermission.id}`, PermissionService.name);
+      this.logger.log(
+        `Permission saved successfully: ${savedPermission.id}`,
+        PermissionService.name,
+      );
       return savedPermission;
     } catch (error) {
-      this.logger.error(`Failed to create Permission: ${error.message}`, PermissionService.name);
+      this.logger.error(
+        `Failed to create Permission: ${error.message}`,
+        PermissionService.name,
+      );
       if (error instanceof ConflictException) {
         throw error;
       }
-      throw new InternalServerErrorException('Something went wrong while creating the Permission');
+      throw new InternalServerErrorException(
+        'Something went wrong while creating the Permission',
+      );
     }
   }
 
@@ -135,7 +154,9 @@ export class PermissionService {
       where: { id, realm: { id: realmId } },
     });
     if (!permission) {
-      throw new NotFoundException(`Permission with id ${id} not found in this realm`);
+      throw new NotFoundException(
+        `Permission with id ${id} not found in this realm`,
+      );
     }
     return permission;
   }
@@ -160,7 +181,9 @@ export class PermissionService {
       relations: ['realmRoles', 'clientRoles'],
     });
     if (!permission) {
-      throw new NotFoundException(`Permission with id ${id} not found in this realm`);
+      throw new NotFoundException(
+        `Permission with id ${id} not found in this realm`,
+      );
     }
     if (permission.isSystem) {
       throw new ForbiddenException('System permissions cannot be deleted');

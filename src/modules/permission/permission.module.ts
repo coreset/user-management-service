@@ -6,9 +6,7 @@ import { Realm } from '../realms/entities/realm.entity';
 import { TypeOrmModule } from '@nestjs/typeorm';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([Permission, Realm]),
-  ],
+  imports: [TypeOrmModule.forFeature([Permission, Realm])],
   controllers: [PermissionController],
   providers: [PermissionService],
   exports: [PermissionService],

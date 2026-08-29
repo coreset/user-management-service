@@ -28,14 +28,19 @@ export class DashboardService {
       throw new NotFoundException(`Realm '${realmName}' not found`);
     }
 
-    const [users, totalRealmRoles, totalClientRoles, totalPermissions, clients] =
-      await Promise.all([
-        this.usersService.countByRealm(realm.id),
-        this.realmRolesService.countByRealm(realm.id),
-        this.clientRolesService.countByRealm(realm.id),
-        this.permissionService.countByRealm(realm.id),
-        this.clientsService.countByRealm(realm.id),
-      ]);
+    const [
+      users,
+      totalRealmRoles,
+      totalClientRoles,
+      totalPermissions,
+      clients,
+    ] = await Promise.all([
+      this.usersService.countByRealm(realm.id),
+      this.realmRolesService.countByRealm(realm.id),
+      this.clientRolesService.countByRealm(realm.id),
+      this.permissionService.countByRealm(realm.id),
+      this.clientsService.countByRealm(realm.id),
+    ]);
 
     return {
       realmName: realm.realmName,

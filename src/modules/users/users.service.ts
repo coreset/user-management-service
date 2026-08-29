@@ -36,7 +36,7 @@ export class UsersService {
       // @BeforeInsert hashes this value; fall back to a random secret
       // (e.g. social logins that never set a password).
       passwordHash: createUserDto.password ?? randomBytes(16).toString('hex'),
-      realm: realm
+      realm: realm,
     });
 
     try {
@@ -62,10 +62,14 @@ export class UsersService {
   }
 
   /** Total/active/inactive user counts for a realm (used by the dashboard). */
-  async countByRealm(realmId: string): Promise<{ total: number; active: number; inactive: number }> {
+  async countByRealm(
+    realmId: string,
+  ): Promise<{ total: number; active: number; inactive: number }> {
     const [total, active] = await Promise.all([
       this.UserRepo.count({ where: { realm: { id: realmId } } }),
-      this.UserRepo.count({ where: { realm: { id: realmId }, isActive: true } }),
+      this.UserRepo.count({
+        where: { realm: { id: realmId }, isActive: true },
+      }),
     ]);
     return { total, active, inactive: total - active };
   }
@@ -197,7 +201,9 @@ export class UsersService {
   async restore(id: string) {
     const result = await this.UserRepo.restore(id);
     if (result.affected === 0) {
-      throw new NotFoundException(`User with id ${id} not found or not deleted`);
+      throw new NotFoundException(
+        `User with id ${id} not found or not deleted`,
+      );
     }
   }
 

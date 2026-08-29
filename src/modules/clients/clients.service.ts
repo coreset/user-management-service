@@ -82,10 +82,14 @@ export class ClientsService {
   }
 
   /** Total/active client counts for a realm (used by the dashboard). */
-  async countByRealm(realmId: string): Promise<{ total: number; active: number }> {
+  async countByRealm(
+    realmId: string,
+  ): Promise<{ total: number; active: number }> {
     const [total, active] = await Promise.all([
       this.clientRepo.count({ where: { realm: { id: realmId } } }),
-      this.clientRepo.count({ where: { realm: { id: realmId }, isActive: true } }),
+      this.clientRepo.count({
+        where: { realm: { id: realmId }, isActive: true },
+      }),
     ]);
     return { total, active };
   }
@@ -135,7 +139,9 @@ export class ClientsService {
       where: { id, realm: { id: realmId } },
     });
     if (!client) {
-      throw new NotFoundException(`Client with id ${id} not found in this realm`);
+      throw new NotFoundException(
+        `Client with id ${id} not found in this realm`,
+      );
     }
     return client;
   }

@@ -4,7 +4,9 @@ import { ApiPropertyOptional } from '@nestjs/swagger';
 
 export class PaginationQueryDto {
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? parseInt(value, 10) : value))
+  @Transform(({ value }) =>
+    typeof value === 'string' ? parseInt(value, 10) : value,
+  )
   @IsInt()
   @Min(1)
   @ApiPropertyOptional({
@@ -16,7 +18,9 @@ export class PaginationQueryDto {
   page: number = 1;
 
   @IsOptional()
-  @Transform(({ value }) => (typeof value === 'string' ? parseInt(value, 10) : value))
+  @Transform(({ value }) =>
+    typeof value === 'string' ? parseInt(value, 10) : value,
+  )
   @IsInt()
   @Min(1)
   @Max(100)

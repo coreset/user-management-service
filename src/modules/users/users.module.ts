@@ -6,14 +6,9 @@ import { User } from './entities/user.entity';
 import { RealmsModule } from '../realms/realms.module';
 
 @Module({
-  imports: [
-    TypeOrmModule.forFeature([User]),
-    RealmsModule,
-  ],
+  imports: [TypeOrmModule.forFeature([User]), RealmsModule],
   controllers: [UsersController],
-  providers: [
-    UsersService,
-  ],
+  providers: [UsersService],
   exports: [UsersService],
 })
 export class UsersModule {}

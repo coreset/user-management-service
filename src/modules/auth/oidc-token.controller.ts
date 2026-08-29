@@ -1,6 +1,19 @@
-import { Body, Controller, Param, Post, Req, UnauthorizedException } from '@nestjs/common';
+import {
+  Body,
+  Controller,
+  Param,
+  Post,
+  Req,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { ApiBody, ApiOperation, ApiParam, ApiResponse, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBody,
+  ApiOperation,
+  ApiParam,
+  ApiResponse,
+  ApiTags,
+} from '@nestjs/swagger';
 import { plainToInstance } from 'class-transformer';
 import { parseExpiry } from '../../common/utils/time.util';
 import { AuthService } from './auth.service';
@@ -34,14 +47,26 @@ export class OidcTokenController {
   @Public()
   @Post(':realmName/protocol/openid-connect/access-token')
   @ApiOperation({
-    summary: 'Issue a token pair from a username/password (Keycloak-compatible)',
+    summary:
+      'Issue a token pair from a username/password (Keycloak-compatible)',
     description:
       "OAuth2 Resource Owner Password Credentials grant. Form-encoded body, matching Keycloak's token endpoint.",
   })
-  @ApiParam({ name: 'realmName', example: 'master', description: 'Realm the client/user belong to' })
+  @ApiParam({
+    name: 'realmName',
+    example: 'master',
+    description: 'Realm the client/user belong to',
+  })
   @ApiBody({ type: AccessTokenRequestDto })
-  @ApiResponse({ status: 200, description: 'Token issued.', type: OidcTokenResponseDto })
-  @ApiResponse({ status: 401, description: 'Invalid client credentials or invalid user credentials.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Token issued.',
+    type: OidcTokenResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid client credentials or invalid user credentials.',
+  })
   @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
   async accessToken(
     @Param('realmName') realmName: string,
@@ -50,7 +75,11 @@ export class OidcTokenController {
   ) {
     await this.validateClient(realmName, dto.client_id, dto.client_secret);
 
-    const user = await this.authService.validateUser(dto.username, dto.password, realmName);
+    const user = await this.authService.validateUser(
+      dto.username,
+      dto.password,
+      realmName,
+    );
     const result = await this.authService.login(
       user.id,
       { ip: req.ip, userAgent: req.get('user-agent') ?? undefined },
@@ -67,10 +96,21 @@ export class OidcTokenController {
     description:
       "OAuth2 refresh_token grant. Form-encoded body, matching Keycloak's token endpoint.",
   })
-  @ApiParam({ name: 'realmName', example: 'master', description: 'Realm the client/user belong to' })
+  @ApiParam({
+    name: 'realmName',
+    example: 'master',
+    description: 'Realm the client/user belong to',
+  })
   @ApiBody({ type: RefreshTokenRequestDto })
-  @ApiResponse({ status: 200, description: 'Token issued.', type: OidcTokenResponseDto })
-  @ApiResponse({ status: 401, description: 'Invalid client credentials or invalid/expired refresh token.' })
+  @ApiResponse({
+    status: 200,
+    description: 'Token issued.',
+    type: OidcTokenResponseDto,
+  })
+  @ApiResponse({
+    status: 401,
+    description: 'Invalid client credentials or invalid/expired refresh token.',
+  })
   @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
   async refreshToken(
     @Param('realmName') realmName: string,
@@ -78,7 +118,9 @@ export class OidcTokenController {
   ) {
     await this.validateClient(realmName, dto.client_id, dto.client_secret);
 
-    const result = await this.authService.refreshTokenByRawToken(dto.refresh_token);
+    const result = await this.authService.refreshTokenByRawToken(
+      dto.refresh_token,
+    );
 
     return this.toTokenResponse(result);
   }
@@ -102,8 +144,14 @@ export class OidcTokenController {
   }
 
   private toTokenResponse(result: { token: string; refreshToken: string }) {
-    const accessExpiresIn = this.configService.get<string>('JWT_EXPIRE_IN', '1d');
-    const refreshExpiresIn = this.configService.get<string>('REFRESH_JWT_EXPIRE_IN', '');
+    const accessExpiresIn = this.configService.get<string>(
+      'JWT_EXPIRE_IN',
+      '1d',
+    );
+    const refreshExpiresIn = this.configService.get<string>(
+      'REFRESH_JWT_EXPIRE_IN',
+      '',
+    );
 
     return plainToInstance(
       OidcTokenResponseDto,

@@ -20,7 +20,9 @@ export class UserVerificationIdentifier {
   @Column({ type: 'varchar', length: 10, name: 'type' })
   type: string; //'email' | 'code'; // Token type
 
-  @ManyToOne(() => User, (user) => user.verificationIdentifiers, { onDelete: 'CASCADE' })
+  @ManyToOne(() => User, (user) => user.verificationIdentifiers, {
+    onDelete: 'CASCADE',
+  })
   @JoinColumn({ name: 'user_id' })
   user: User;
 

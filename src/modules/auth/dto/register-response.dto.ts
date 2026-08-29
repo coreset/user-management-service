@@ -17,7 +17,8 @@ export class RegisteredUserDto {
 /** Shape returned by POST /auth/register. */
 export class RegisterResponseDto {
   @ApiProperty({ required: false })
-  @Expose() message?: string;
+  @Expose()
+  message?: string;
 
   @ApiProperty({ type: () => RegisteredUserDto })
   @Expose()

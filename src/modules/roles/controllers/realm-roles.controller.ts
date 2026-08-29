@@ -82,11 +82,18 @@ export class RealmRolesController {
   @Post()
   @ApiOperation({
     summary: 'Create a realm role',
-    description: 'Creates a new role scoped to the given realm (or restores it if it was previously soft-deleted).',
+    description:
+      'Creates a new role scoped to the given realm (or restores it if it was previously soft-deleted).',
   })
-  @ApiResponse({ status: 201, description: 'Role created (or restored from a soft-deleted state).' })
+  @ApiResponse({
+    status: 201,
+    description: 'Role created (or restored from a soft-deleted state).',
+  })
   @ApiResponse({ status: 404, description: "Realm 'realmName' not found." })
-  @ApiResponse({ status: 409, description: 'A role with this name already exists in this realm.' })
+  @ApiResponse({
+    status: 409,
+    description: 'A role with this name already exists in this realm.',
+  })
   async create(
     @Param('realmName') realmName: string,
     @Body() createRoleDto: CreateRealmRoleDto,
@@ -104,12 +111,34 @@ export class RealmRolesController {
   @Get()
   @ApiOperation({
     summary: 'List realm roles',
-    description: 'Lists roles, paginated, optionally filtered by a name substring.',
+    description:
+      'Lists roles, paginated, optionally filtered by a name substring.',
   })
-  @ApiQuery({ name: 'search', required: false, example: 'ADMIN', description: 'Substring filter on role name' })
-  @ApiQuery({ name: 'page', required: false, example: 1, description: 'Page number (1-indexed)' })
-  @ApiQuery({ name: 'limit', required: false, example: 10, description: 'Items per page (max 100)' })
-  @ApiQuery({ name: 'order', required: false, enum: ['asc', 'desc', 'ASC', 'DESC'], example: 'DESC', description: 'Sort direction' })
+  @ApiQuery({
+    name: 'search',
+    required: false,
+    example: 'ADMIN',
+    description: 'Substring filter on role name',
+  })
+  @ApiQuery({
+    name: 'page',
+    required: false,
+    example: 1,
+    description: 'Page number (1-indexed)',
+  })
+  @ApiQuery({
+    name: 'limit',
+    required: false,
+    example: 10,
+    description: 'Items per page (max 100)',
+  })
+  @ApiQuery({
+    name: 'order',
+    required: false,
+    enum: ['asc', 'desc', 'ASC', 'DESC'],
+    example: 'DESC',
+    description: 'Sort direction',
+  })
   @ApiResponse({ status: 200, description: 'Paginated list of roles.' })
   async findAll(
     @Param('realmName') realmName: string,
@@ -144,7 +173,10 @@ export class RealmRolesController {
   @Get(':id/permissions')
   @ApiOperation({ summary: 'List permissions granted by a realm role' })
   @ApiParam(ID_PARAM)
-  @ApiResponse({ status: 200, description: 'List of permissions granted by the realm role.' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of permissions granted by the realm role.',
+  })
   async listPermissions(@Param('id', ParseUUIDPipe) id: string) {
     const result = await this.realmRolesService.listPermissions(id);
     return plainToInstance(PermissionResponseDto, result, {
@@ -156,7 +188,10 @@ export class RealmRolesController {
   @Get(':id/users')
   @ApiOperation({ summary: 'List users assigned to a realm role' })
   @ApiParam(ID_PARAM)
-  @ApiResponse({ status: 200, description: 'List of users assigned to the realm role.' })
+  @ApiResponse({
+    status: 200,
+    description: 'List of users assigned to the realm role.',
+  })
   async listUsers(@Param('id', ParseUUIDPipe) id: string) {
     const result = await this.realmRolesService.listUsers(id);
     return plainToInstance(UserResponseDto, result, {
@@ -169,7 +204,10 @@ export class RealmRolesController {
   @ApiOperation({ summary: 'Update a realm role' })
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'Role updated.' })
-  update(@Param('id', ParseUUIDPipe) id: string, @Body() updateRoleDto: UpdateRealmRoleDto) {
+  update(
+    @Param('id', ParseUUIDPipe) id: string,
+    @Body() updateRoleDto: UpdateRealmRoleDto,
+  ) {
     const result = this.realmRolesService.update(id, updateRoleDto);
     return plainToInstance(RoleResponseDto, result, {
       excludeExtraneousValues: true,
@@ -184,7 +222,10 @@ export class RealmRolesController {
   })
   @ApiParam(ID_PARAM)
   @ApiResponse({ status: 200, description: 'Role soft-deleted.' })
-  @ApiResponse({ status: 403, description: 'The SUPER_ADMIN role cannot be deleted.' })
+  @ApiResponse({
+    status: 403,
+    description: 'The SUPER_ADMIN role cannot be deleted.',
+  })
   @ApiResponse({ status: 404, description: 'Role not found.' })
   @ApiResponse({ status: 409, description: 'Role is already deleted.' })
   remove(@Param('id', ParseUUIDPipe) id: string) {
@@ -209,28 +250,46 @@ export class RealmRolesController {
   @Post(':roleId/users')
   @ApiOperation({
     summary: 'Assign users to a realm role',
-    description: 'Assigns one or more users (scoped to the role\'s own realm) to an existing realm role.',
+    description:
+      "Assigns one or more users (scoped to the role's own realm) to an existing realm role.",
   })
   @ApiParam(ROLE_ID_PARAM)
   @ApiResponse({ status: 201, description: 'Users assigned to the role.' })
-  @ApiResponse({ status: 400, description: 'One or more user IDs not found in this realm.' })
-  @ApiResponse({ status: 403, description: 'Cannot assign users to the SUPER_ADMIN role.' })
+  @ApiResponse({
+    status: 400,
+    description: 'One or more user IDs not found in this realm.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: 'Cannot assign users to the SUPER_ADMIN role.',
+  })
   @ApiResponse({ status: 404, description: 'Role not found.' })
   addUsers(
     @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() assignUsersDto: AssignUsersDto,
   ) {
-    return this.realmRolesService.assignUsersToRole(roleId, assignUsersDto.userIdList);
+    return this.realmRolesService.assignUsersToRole(
+      roleId,
+      assignUsersDto.userIdList,
+    );
   }
 
   @Permissions([PermissionKey.ROLES_ASSIGN_USERS])
   @Delete(':roleId/users/:userId')
   @ApiOperation({ summary: 'Unassign a user from a realm role' })
   @ApiParam(ROLE_ID_PARAM)
-  @ApiParam({ name: 'userId', required: true, format: 'uuid', description: 'UUID of the user to unassign' })
+  @ApiParam({
+    name: 'userId',
+    required: true,
+    format: 'uuid',
+    description: 'UUID of the user to unassign',
+  })
   @ApiResponse({ status: 200, description: 'User unassigned from the role.' })
   @ApiResponse({ status: 400, description: 'User ID not found.' })
-  @ApiResponse({ status: 403, description: 'Cannot unassign users from the SUPER_ADMIN role.' })
+  @ApiResponse({
+    status: 403,
+    description: 'Cannot unassign users from the SUPER_ADMIN role.',
+  })
   @ApiResponse({ status: 404, description: 'Role not found.' })
   removeUser(
     @Param('roleId', ParseUUIDPipe) roleId: string,
@@ -246,7 +305,8 @@ export class RealmRolesController {
   @Post(':roleId/permissions')
   @ApiOperation({
     summary: 'Assign permissions to a realm role',
-    description: 'Assigns one or more permissions to an existing realm role. Only users with SUPER_ADMIN permission can perform this operation due to privilege escalation risks.',
+    description:
+      'Assigns one or more permissions to an existing realm role. Only users with SUPER_ADMIN permission can perform this operation due to privilege escalation risks.',
   })
   @ApiParam({
     name: 'roleId',
@@ -255,29 +315,55 @@ export class RealmRolesController {
     format: 'uuid',
     description: 'UUID of the realm role to assign permissions to',
   })
-  @ApiResponse({ status: 201, description: 'Permissions assigned to the role.' })
-  @ApiResponse({ status: 400, description: 'Target role is SUPER_ADMIN, or one or more permission IDs not found in this realm.' })
+  @ApiResponse({
+    status: 201,
+    description: 'Permissions assigned to the role.',
+  })
+  @ApiResponse({
+    status: 400,
+    description:
+      'Target role is SUPER_ADMIN, or one or more permission IDs not found in this realm.',
+  })
   @ApiResponse({ status: 404, description: 'Role not found.' })
   addPermissions(
     @Param('roleId', ParseUUIDPipe) roleId: string,
     @Body() assignPermissionsDto: AssignPermissionsDto,
   ) {
-    return this.realmRolesService.assignPermissionsToRole(roleId, assignPermissionsDto.permissionIds);
+    return this.realmRolesService.assignPermissionsToRole(
+      roleId,
+      assignPermissionsDto.permissionIds,
+    );
   }
   @Permissions([PermissionKey.ROLES_ASSIGN_PERMISSIONS])
   @Delete(':roleId/permissions/:permissionId')
   @ApiOperation({ summary: 'Remove a permission from a realm role' })
   @ApiParam(ROLE_ID_PARAM)
-  @ApiParam({ name: 'permissionId', required: true, format: 'uuid', description: 'UUID of the permission to remove' })
-  @ApiResponse({ status: 200, description: 'Permission removed from the role.' })
-  @ApiResponse({ status: 400, description: 'Permission ID not found in this realm.' })
-  @ApiResponse({ status: 403, description: "Cannot change the SUPER_ADMIN role's permissions." })
+  @ApiParam({
+    name: 'permissionId',
+    required: true,
+    format: 'uuid',
+    description: 'UUID of the permission to remove',
+  })
+  @ApiResponse({
+    status: 200,
+    description: 'Permission removed from the role.',
+  })
+  @ApiResponse({
+    status: 400,
+    description: 'Permission ID not found in this realm.',
+  })
+  @ApiResponse({
+    status: 403,
+    description: "Cannot change the SUPER_ADMIN role's permissions.",
+  })
   @ApiResponse({ status: 404, description: 'Role not found.' })
   removePermission(
     @Param('roleId', ParseUUIDPipe) roleId: string,
     @Param('permissionId', ParseUUIDPipe) permissionId: string,
   ) {
-    return this.realmRolesService.unassignPermissionsFromRole(roleId, [permissionId]);
+    return this.realmRolesService.unassignPermissionsFromRole(roleId, [
+      permissionId,
+    ]);
   }
 
   // ----- Realm roles for a given user -----------------------------------------
@@ -285,7 +371,8 @@ export class RealmRolesController {
   @Get('users/:userId')
   @ApiOperation({
     summary: "List a user's realm roles",
-    description: 'Returns the realm roles currently assigned to this user, within this realm.',
+    description:
+      'Returns the realm roles currently assigned to this user, within this realm.',
   })
   @ApiParam(USER_ID_PARAM)
   @ApiResponse({ status: 200, description: "The user's realm roles." })
@@ -294,7 +381,12 @@ export class RealmRolesController {
     @Param('userId', ParseUUIDPipe) userId: string,
   ) {
     const realmId = await this.resolveRealmId(realmName);
-    const result = await this.realmRolesService.findRolesForUser(realmId, userId);
-    return plainToInstance(RoleResponseDto, result, { excludeExtraneousValues: true });
+    const result = await this.realmRolesService.findRolesForUser(
+      realmId,
+      userId,
+    );
+    return plainToInstance(RoleResponseDto, result, {
+      excludeExtraneousValues: true,
+    });
   }
 }

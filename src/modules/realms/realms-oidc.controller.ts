@@ -28,7 +28,10 @@ export class RealmsOidcController {
     example: 'master',
     description: 'Name of the realm whose signing keys are requested',
   })
-  @ApiResponse({ status: 200, description: 'JWKS document containing the realm\'s active public key(s).' })
+  @ApiResponse({
+    status: 200,
+    description: "JWKS document containing the realm's active public key(s).",
+  })
   getCerts(@Param('realm') realm: string) {
     return this.realmsService.getJwks(realm);
   }

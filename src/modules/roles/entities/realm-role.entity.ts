@@ -38,7 +38,9 @@ export class RealmRole {
   @JoinColumn({ name: 'realm_id' })
   realm!: Realm;
 
-  @ManyToMany(() => Permission, (permission) => permission.realmRoles, { cascade: true })
+  @ManyToMany(() => Permission, (permission) => permission.realmRoles, {
+    cascade: true,
+  })
   @JoinTable({
     name: 'realm_role_permissions',
     joinColumn: { name: 'realm_role_id' },

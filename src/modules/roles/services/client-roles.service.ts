@@ -60,7 +60,10 @@ export class ClientRolesService {
     return this.clientRoleRepo.save(clientRole);
   }
 
-  async listClientRoles(realmId: string, clientId: string): Promise<ClientRole[]> {
+  async listClientRoles(
+    realmId: string,
+    clientId: string,
+  ): Promise<ClientRole[]> {
     const client = await this.clientsService.findOne(realmId, clientId);
     return this.clientRoleRepo.find({ where: { client: { id: client.id } } });
   }
@@ -239,7 +242,9 @@ export class ClientRolesService {
       where: { id: In(permissionIds), realm: { id: realmId } },
     });
     if (permissions.length !== permissionIds.length) {
-      throw new NotFoundException('One or more permissions not found in this realm');
+      throw new NotFoundException(
+        'One or more permissions not found in this realm',
+      );
     }
 
     const existingIds = new Set(clientRole.permissions.map((p) => p.id));
