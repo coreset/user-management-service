@@ -19,8 +19,7 @@ export class MasterRealmSeeder implements Seeder {
     const masterRealmName = process.env.MASTER_REALM_NAME || 'master';
     const superAdminEmail =
       process.env.SUPER_ADMIN_EMAIL || 'superadmin@example.com';
-    const superAdminUsername =
-      process.env.SUPER_ADMIN_USERNAME || 'superadmin';
+    const superAdminUsername = process.env.SUPER_ADMIN_USERNAME || 'superadmin';
     const superAdminPassword =
       process.env.SUPER_ADMIN_PASSWORD || 'ChangeMe!SuperAdmin123';
 

@@ -32,6 +32,7 @@ import { AuditService } from '../../common/audit/audit.service';
 import { LocalRegisterDto } from './dto/local-register.dto';
 import { SettingsService } from '../settings/settings.service';
 import { AppLoggerService } from '../../common/logger/logger.service';
+import { Client } from '../clients/entities/client.entity';
 
 /** How many previous passwords to block from reuse. */
 const PASSWORD_HISTORY_COUNT = 5;
@@ -345,6 +346,53 @@ export class AuthService {
       id: userId,
       token,
       refreshToken,
+    };
+  }
+
+  /**
+   * Client-credentials (service-account) grant — no user in the loop. Issues
+   * an access token whose `sub` identifies the CLIENT itself, signed exactly
+   * like a user token (RS256, realm signing key), so downstream resource
+   * servers (which only verify the signature via JWKS and don't otherwise
+   * care who "sub" is) accept it identically to a real user's token.
+   *
+   * No refresh token is issued: OAuth2's client_credentials grant is
+   * conventionally not refreshable — the caller just re-requests a new token
+   * with its client_id/secret once the old one expires (smp-backend's
+   * MediaManagementTokenService already does exactly this). There's also no
+   * user to attach a RefreshToken/UserSession row to.
+   */
+  async loginAsClient(client: Client, realmName: string) {
+    const payload: AuthJwtPayload = {
+      sub: `service-account-${client.clientId}`,
+      realm: realmName,
+      client_id: client.clientId,
+    };
+
+    const signingKey = await this.realmsService.getActiveSigningKey(realmName);
+    const accessExpiresIn = this.configService.get<string>(
+      'JWT_EXPIRE_IN',
+      '1d',
+    );
+    const token = this.jwtService.sign(payload, {
+      secret: signingKey.privateKey,
+      algorithm: 'RS256',
+      keyid: signingKey.kid,
+      expiresIn: accessExpiresIn,
+    });
+
+    await this.auditService.recordAuthEvent({
+      action: 'CLIENT_CREDENTIALS_LOGIN',
+      status: 'SUCCESS',
+      actorId: payload.sub,
+      actorUsername: client.clientId,
+      realmId: client.realm?.id,
+    });
+
+    return {
+      id: payload.sub,
+      token,
+      refreshToken: '',
     };
   }
 

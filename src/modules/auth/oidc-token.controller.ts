@@ -73,11 +73,23 @@ export class OidcTokenController {
     @Body() dto: AccessTokenRequestDto,
     @Req() req: Request,
   ) {
-    await this.validateClient(realmName, dto.client_id, dto.client_secret);
+    const client = await this.validateClient(
+      realmName,
+      dto.client_id,
+      dto.client_secret,
+    );
 
+    if (dto.grant_type === 'client_credentials') {
+      this.assertGrantAllowed(client, 'client_credentials');
+      const result = await this.authService.loginAsClient(client, realmName);
+      return this.toTokenResponse(result);
+    }
+
+    // `username`/`password` are guaranteed present here by the DTO's
+    // @ValidateIf (only optional for the client_credentials branch above).
     const user = await this.authService.validateUser(
-      dto.username,
-      dto.password,
+      dto.username!,
+      dto.password!,
       realmName,
     );
     const result = await this.authService.login(
@@ -141,6 +153,21 @@ export class OidcTokenController {
       throw new UnauthorizedException('invalid_client');
     }
     return client;
+  }
+
+  /** Rejects a grant the client wasn't explicitly provisioned for — `grantTypes`
+   * is a comma-separated column on Client (e.g. "password,refresh_token" or
+   * "client_credentials"); a blank/missing value allows nothing but the
+   * default password grant, matching this endpoint's prior behavior for
+   * every client that predates this check. */
+  private assertGrantAllowed(client: Client, grant: string): void {
+    const allowed = (client.grantTypes || 'password')
+      .split(',')
+      .map((g) => g.trim())
+      .filter(Boolean);
+    if (!allowed.includes(grant)) {
+      throw new UnauthorizedException('unauthorized_client');
+    }
   }
 
   private toTokenResponse(result: { token: string; refreshToken: string }) {
